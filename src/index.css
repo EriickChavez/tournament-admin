@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: var(--theme-primary, #2563eb);
+}
+
+:root {
+  --theme-primary: #2563eb; /* default blue-600 */
+}
+
+/* Optional: if you want a dark mode you can add .dark {} styles */
+.dark {
+  --theme-primary: #3b82f6; /* slightly lighter blue in dark mode */
+}
