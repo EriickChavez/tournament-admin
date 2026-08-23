@@ -16,7 +16,7 @@ export function AppRouter() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/home" element={<HomePage />} />
+        <Route path="/home/*" element={<HomePage />} />
       </Route>
     </Routes>
   );

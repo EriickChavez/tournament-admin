@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -5,10 +6,35 @@
 }
 
 :root {
-  --theme-primary: #2563eb; /* default blue-600 */
+  /* Color tokens */
+  --theme-primary: #2563eb;
+  --theme-secondary: #1E293B;
+  --theme-accent: #10B981;
+  --theme-bg: #FAFAFA;
+  --theme-text: #171717;
+
+  /* Typography */
+  --theme-font: 'Inter', sans-serif;
+  --theme-font-size: 15px;
+
+  /* Layout */
+  --theme-radius: 12px;
+  --theme-transition: 200ms;
 }
 
-/* Optional: if you want a dark mode you can add .dark {} styles */
+/* Apply font globally */
+html, body {
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+}
+
+/* Dark mode base */
 .dark {
-  --theme-primary: #3b82f6; /* slightly lighter blue in dark mode */
+  --theme-primary: #3b82f6;
+  color-scheme: dark;
+}
+
+/* Smooth transitions for theme changes */
+*, *::before, *::after {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

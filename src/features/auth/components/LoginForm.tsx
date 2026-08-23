@@ -54,7 +54,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           className="w-full min-h-11 px-3 border rounded"
-          {...register("email")}
+          {...register("email", { setValueAs: (value) => value.trim() })}
         />
         {errors.email && (
           <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
@@ -70,7 +70,7 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           className="w-full min-h-11 px-3 border rounded"
-          {...register("password")}
+          {...register("password", { setValueAs: (value) => value.trim() })}
         />
         {errors.password && (
           <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
