@@ -5,6 +5,7 @@ import { SplashPage } from "../pages/SplashPage";
 import { LoginPage } from "../pages/LoginPage";
 import { HomePage } from "../pages/HomePage";
 import { PersonalizacionPage } from "../features/personalizacion/PersonalizacionPage";
+import { CreateTournamentPage } from "../pages/CreateTournamentPage";
 
 export function AppRouter() {
   return (
@@ -20,6 +21,7 @@ export function AppRouter() {
         <Route element={<AppLayout />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/personalizacion" element={<PersonalizacionPage />} />
+          <Route path="/torneos/crear" element={<CreateTournamentPage />} />
         </Route>
       </Route>
     </Routes>

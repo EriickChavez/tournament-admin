@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router";
+
 export function EmptyTournamentState() {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-4">
       <div className="text-5xl mb-4">🏆</div>
@@ -8,9 +11,8 @@ export function EmptyTournamentState() {
         calendario.
       </p>
       <button
-        disabled
-        title="Disponible próximamente"
-        className="mt-6 min-h-11 px-6 rounded bg-gray-300 text-white cursor-not-allowed"
+        onClick={() => navigate("/torneos/crear")}
+        className="mt-6 min-h-11 px-6 rounded bg-gray-900 text-white"
       >
         Crear torneo
       </button>
