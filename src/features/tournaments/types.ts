@@ -4,6 +4,7 @@ export interface Tournament {
     subtitle?: string
     description?: string
     slug: string
+    roleId: string
 }
 
 export interface CreateTournamentPayload {
@@ -11,3 +12,5 @@ export interface CreateTournamentPayload {
     subtitle?: string
     description?: string
 }
+
+export type UpdateTournamentPayload = Partial<CreateTournamentPayload>
