@@ -59,13 +59,31 @@ export function SplashPage() {
 
   if (hasError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <p className="text-center text-gray-700">
-          No pudimos conectar con el servidor.
-        </p>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4 bg-gray-50">
+        <div className="w-14 h-14 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-red-500"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div className="text-center">
+          <p className="font-semibold text-gray-900">Sin conexión</p>
+          <p className="text-sm text-gray-500 mt-1">No pudimos conectar con el servidor.</p>
+        </div>
         <button
           onClick={() => setAttempt((n) => n + 1)}
-          className="min-h-11 px-6 rounded bg-gray-900 text-white"
+          className="min-h-11 px-6 rounded-xl bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           Reintentar
         </button>
@@ -74,8 +92,39 @@ export function SplashPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-500">Cargando...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-50">
+      {/* Logo */}
+      <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shadow-primary/30">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="4" />
+        </svg>
+      </div>
+      <p className="text-xl font-bold text-gray-900 tracking-tight">Nova</p>
+
+      {/* Spinner */}
+      <svg
+        className="animate-spin text-primary"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      >
+        <path d="M12 2a10 10 0 0 1 10 10" opacity="0.3" />
+        <path d="M12 2a10 10 0 0 1 10 10" />
+      </svg>
     </div>
   );
 }

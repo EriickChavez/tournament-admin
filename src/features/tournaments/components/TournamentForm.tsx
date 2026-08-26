@@ -50,68 +50,77 @@ export function TournamentForm({
     onSubmit(values, nameChanged ?? false);
   }
 
+  const inputClass =
+    "w-full min-h-11 px-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
+
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className="w-full max-w-lg flex flex-col gap-4 p-4"
+      className="w-full max-w-lg flex flex-col gap-5"
     >
       <div>
-        <label htmlFor="name" className="block text-sm mb-1">
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
           Nombre del torneo
         </label>
         <input
           id="name"
-          className="w-full min-h-11 px-3 border rounded"
+          className={inputClass}
           {...register("name")}
         />
         {nameChanged && (
-          <p className="text-sm text-amber-600 mt-1">
-            ⚠ Cambiar el nombre generará una nueva URL pública; los enlaces
-            anteriores dejarán de funcionar.
-          </p>
+          <div className="mt-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2">
+            <p className="text-xs text-amber-700">
+              ⚠ Cambiar el nombre generará una nueva URL pública; los enlaces
+              anteriores dejarán de funcionar.
+            </p>
+          </div>
         )}
         {errors.name && (
-          <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+          <p className="text-xs text-red-500 mt-1.5">{errors.name.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="subtitle" className="block text-sm mb-1">
-          Subtítulo (opcional)
+        <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1.5">
+          Subtítulo <span className="text-gray-400 font-normal">(opcional)</span>
         </label>
         <input
           id="subtitle"
-          className="w-full min-h-11 px-3 border rounded"
+          className={inputClass}
           {...register("subtitle")}
         />
         {errors.subtitle && (
-          <p className="text-sm text-red-600 mt-1">{errors.subtitle.message}</p>
+          <p className="text-xs text-red-500 mt-1.5">{errors.subtitle.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm mb-1">
-          Descripción (opcional)
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
+          Descripción <span className="text-gray-400 font-normal">(opcional)</span>
         </label>
         <textarea
           id="description"
           rows={4}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
           {...register("description")}
         />
         {errors.description && (
-          <p className="text-sm text-red-600 mt-1">
+          <p className="text-xs text-red-500 mt-1.5">
             {errors.description.message}
           </p>
         )}
       </div>
 
-      {generalError && <p className="text-sm text-red-600">{generalError}</p>}
+      {generalError && (
+        <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2.5">
+          <p className="text-sm text-red-600">{generalError}</p>
+        </div>
+      )}
 
       <button
         type="submit"
         disabled={submitting}
-        className="min-h-11 rounded bg-gray-900 text-white disabled:opacity-50"
+        className="min-h-11 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
       >
         {submitting ? "Guardando..." : submitLabel}
       </button>

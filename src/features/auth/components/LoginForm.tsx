@@ -43,46 +43,50 @@ export function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full max-w-sm flex flex-col gap-4 p-4"
+      className="w-full flex flex-col gap-5"
     >
       <div>
-        <label htmlFor="email" className="block text-sm mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
           Email
         </label>
         <input
           id="email"
           type="email"
           autoComplete="email"
-          className="w-full min-h-11 px-3 border rounded"
+          className="w-full min-h-11 px-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           {...register("email", { setValueAs: (value) => value.trim() })}
         />
         {errors.email && (
-          <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+          <p className="text-xs text-red-500 mt-1.5">{errors.email.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
           Contraseña
         </label>
         <input
           id="password"
           type="password"
           autoComplete="current-password"
-          className="w-full min-h-11 px-3 border rounded"
+          className="w-full min-h-11 px-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           {...register("password", { setValueAs: (value) => value.trim() })}
         />
         {errors.password && (
-          <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
+          <p className="text-xs text-red-500 mt-1.5">{errors.password.message}</p>
         )}
       </div>
 
-      {generalError && <p className="text-sm text-red-600">{generalError}</p>}
+      {generalError && (
+        <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2.5">
+          <p className="text-sm text-red-600">{generalError}</p>
+        </div>
+      )}
 
       <button
         type="submit"
         disabled={login.isPending}
-        className="min-h-11 rounded bg-gray-900 text-white disabled:opacity-50"
+        className="min-h-11 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity active:scale-[0.98] transition-transform"
       >
         {login.isPending ? "Ingresando..." : "Ingresar"}
       </button>
