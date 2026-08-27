@@ -7,5 +7,6 @@ export const tournamentsApi = {
     list: () => httpClient.get<{ tournaments: Tournament[] }>('/tournaments'),
     update: (id: string, payload: UpdateTournamentPayload) =>
         httpClient.patch<{ tournament: Tournament }>(`/tournaments/${id}`, payload),
+    delete: (id: string) => httpClient.delete(`/tournaments/${id}`),
 
 }
