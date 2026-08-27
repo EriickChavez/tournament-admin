@@ -19,7 +19,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 font-sans">
+    <div className="min-h-screen h-svh flex bg-gray-50 font-sans">
       <Sidebar
         user={data?.user}
         onLogout={handleLogout}

@@ -139,6 +139,7 @@ export function TournamentForm({
             id="startDate"
             type="date"
             className={inputClass}
+            min={new Date().toISOString().split("T")[0]}
             {...register("startDate")}
           />
           {errors.startDate && (
@@ -160,6 +161,7 @@ export function TournamentForm({
             id="endDate"
             type="date"
             className={inputClass}
+            min={new Date().toISOString().split("T")[0]}
             {...register("endDate")}
           />
           {errors.endDate && (
