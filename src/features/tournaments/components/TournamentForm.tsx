@@ -11,7 +11,17 @@ interface TournamentFormProps {
   submitting: boolean;
   submitLabel: string;
   generalError?: string | null;
-  fieldErrors?: Partial<Record<"name" | "subtitle" | "description", string>>;
+  fieldErrors?: Partial<
+    Record<
+      | "name"
+      | "subtitle"
+      | "description"
+      | "startDate"
+      | "endDate"
+      | "timezone",
+      string
+    >
+  >;
   isEdit?: boolean;
 }
 
@@ -24,6 +34,9 @@ export function TournamentForm({
   fieldErrors,
   isEdit,
 }: TournamentFormProps) {
+  const autoTimezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Mexico_City";
+
   const {
     register,
     handleSubmit,
@@ -32,13 +45,25 @@ export function TournamentForm({
     formState: { errors },
   } = useForm<EditTournamentFormValues>({
     resolver: zodResolver(editTournamentSchema),
-    defaultValues,
+    defaultValues: {
+      timezone: autoTimezone,
+      ...defaultValues,
+    },
   });
 
   if (fieldErrors) {
     Object.entries(fieldErrors).forEach(([field, message]) => {
       if (message)
-        setError(field as "name" | "subtitle" | "description", { message });
+        setError(
+          field as
+            | "name"
+            | "subtitle"
+            | "description"
+            | "startDate"
+            | "endDate"
+            | "timezone",
+          { message },
+        );
     });
   }
 
@@ -47,7 +72,13 @@ export function TournamentForm({
     isEdit && defaultValues?.name !== undefined && name !== defaultValues.name;
 
   function handleFormSubmit(values: EditTournamentFormValues) {
-    onSubmit(values, nameChanged ?? false);
+    onSubmit(
+      {
+        ...values,
+        timezone: values.timezone || autoTimezone,
+      },
+      nameChanged ?? false,
+    );
   }
 
   const inputClass =
@@ -56,17 +87,16 @@ export function TournamentForm({
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className="w-full max-w-lg flex flex-col gap-5"
+      className="w-full flex flex-col gap-5"
     >
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
           Nombre del torneo
         </label>
-        <input
-          id="name"
-          className={inputClass}
-          {...register("name")}
-        />
+        <input id="name" className={inputClass} {...register("name")} />
         {nameChanged && (
           <div className="mt-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2">
             <p className="text-xs text-amber-700">
@@ -81,22 +111,98 @@ export function TournamentForm({
       </div>
 
       <div>
-        <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1.5">
-          Subtítulo <span className="text-gray-400 font-normal">(opcional)</span>
+        <label
+          htmlFor="subtitle"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
+          Subtítulo{" "}
+          <span className="text-gray-400 font-normal">(opcional)</span>
         </label>
-        <input
-          id="subtitle"
-          className={inputClass}
-          {...register("subtitle")}
-        />
+        <input id="subtitle" className={inputClass} {...register("subtitle")} />
         {errors.subtitle && (
-          <p className="text-xs text-red-500 mt-1.5">{errors.subtitle.message}</p>
+          <p className="text-xs text-red-500 mt-1.5">
+            {errors.subtitle.message}
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label
+            htmlFor="startDate"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
+          >
+            Fecha de inicio{" "}
+            <span className="text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            id="startDate"
+            type="date"
+            className={inputClass}
+            {...register("startDate")}
+          />
+          {errors.startDate && (
+            <p className="text-xs text-red-500 mt-1.5">
+              {errors.startDate.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="endDate"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
+          >
+            Fecha de fin{" "}
+            <span className="text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            id="endDate"
+            type="date"
+            className={inputClass}
+            {...register("endDate")}
+          />
+          {errors.endDate && (
+            <p className="text-xs text-red-500 mt-1.5">
+              {errors.endDate.message}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="timezone"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
+          Zona horaria
+        </label>
+        <div className="relative">
+          <input
+            id="timezone"
+            type="text"
+            readOnly
+            className={`${inputClass} bg-gray-100/70 text-gray-600 cursor-not-allowed`}
+            {...register("timezone")}
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 bg-gray-200/60 px-2 py-0.5 rounded-md">
+            Automática
+          </span>
+        </div>
+        {errors.timezone && (
+          <p className="text-xs text-red-500 mt-1.5">
+            {errors.timezone.message}
+          </p>
         )}
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
-          Descripción <span className="text-gray-400 font-normal">(opcional)</span>
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
+          Descripción{" "}
+          <span className="text-gray-400 font-normal">(opcional)</span>
         </label>
         <textarea
           id="description"

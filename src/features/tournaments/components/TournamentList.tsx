@@ -25,6 +25,22 @@ function StatColumn({ label, value, accent }: StatColumnProps) {
   );
 }
 
+function formatDisplayDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const [year, month, day] = dateStr.split("T")[0].split("-");
+    if (!year || !month || !day) return dateStr;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    return date.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
   const navigate = useNavigate();
   const deleteTournament = useDeleteTournament();
@@ -52,9 +68,14 @@ export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[10px] font-bold tracking-widest text-primary uppercase">
                     Activo
                   </span>
+                  {t.startDate && (
+                    <span className="text-xs text-gray-400">
+                      Desde {formatDisplayDate(t.startDate)}
+                    </span>
+                  )}
                   {t.subtitle && (
                     <span className="text-xs text-gray-400 italic truncate">
-                      {t.subtitle}
+                      {t.startDate ? `• ${t.subtitle}` : t.subtitle}
                     </span>
                   )}
                 </div>

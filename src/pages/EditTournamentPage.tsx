@@ -47,7 +47,7 @@ export function EditTournamentPage() {
   if (!tournament) return <Navigate to="/torneos" replace />;
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full">
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
         <button
@@ -59,7 +59,9 @@ export function EditTournamentPage() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Editar torneo</h1>
-          <p className="text-sm text-gray-500 truncate max-w-xs">{tournament.name}</p>
+          <p className="text-sm text-gray-500 truncate max-w-xs">
+            {tournament.name}
+          </p>
         </div>
       </div>
 

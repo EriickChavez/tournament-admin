@@ -10,6 +10,11 @@ export function EditTournamentForm({ tournament }: { tournament: Tournament }) {
   const navigate = useNavigate();
   const updateTournament = useUpdateTournament(tournament.id);
 
+  function formatDate(dateStr?: string | null): string {
+    if (!dateStr) return "";
+    return dateStr.split("T")[0] || "";
+  }
+
   function handleSubmit(
     values: EditTournamentFormValues,
     changedName: boolean,
@@ -19,15 +24,18 @@ export function EditTournamentForm({ tournament }: { tournament: Tournament }) {
         name: changedName ? values.name : undefined,
         subtitle: values.subtitle || undefined,
         description: values.description || undefined,
+        startDate: values.startDate || undefined,
+        endDate: values.endDate || undefined,
+        timezone: values.timezone || undefined,
       },
       {
-        onSuccess: () => navigate("/torneos", { replace: true }),
+        onSuccess: () => navigate("/home", { replace: true }),
         onError: (error) => {
           if (
             error instanceof ApiError &&
             error.code === "TOURNAMENT_NOT_FOUND"
           ) {
-            navigate("/torneos", { replace: true });
+            navigate("/home", { replace: true });
           }
         },
       },
@@ -56,6 +64,9 @@ export function EditTournamentForm({ tournament }: { tournament: Tournament }) {
         name: tournament.name,
         subtitle: tournament.subtitle ?? "",
         description: tournament.description ?? "",
+        startDate: formatDate(tournament.startDate),
+        endDate: formatDate(tournament.endDate),
+        timezone: tournament.timezone,
       }}
       onSubmit={handleSubmit}
       submitting={updateTournament.isPending}

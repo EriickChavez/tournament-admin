@@ -15,6 +15,9 @@ export function CreateTournamentForm() {
         name: values.name,
         subtitle: values.subtitle || undefined,
         description: values.description || undefined,
+        startDate: values.startDate || undefined,
+        endDate: values.endDate || undefined,
+        timezone: values.timezone || undefined,
       },
       { onSuccess: () => navigate("/home", { replace: true }) },
     );

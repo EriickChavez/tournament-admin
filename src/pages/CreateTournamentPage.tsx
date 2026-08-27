@@ -21,7 +21,7 @@ export function CreateTournamentPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full">
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
         <button
