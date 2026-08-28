@@ -1,6 +1,7 @@
 import { useParams, Navigate, useNavigate } from "react-router";
 import { useTournaments } from "../features/tournaments/hooks/use-tournaments";
 import { EditTournamentForm } from "../features/tournaments/components/EditTournamentForm";
+import { CategoriesSection } from "../features/categories/components/CategoriesSection";
 
 const ArrowLeftIcon = () => (
   <svg
@@ -44,12 +45,12 @@ export function EditTournamentPage() {
     );
 
   const tournament = data?.tournaments.find((t) => t.id === id);
-  if (!tournament) return <Navigate to="/torneos" replace />;
+  if (!tournament) return <Navigate to="/home" replace />;
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col gap-6">
       {/* Page header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
           className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
@@ -65,10 +66,19 @@ export function EditTournamentPage() {
         </div>
       </div>
 
-      {/* Form card */}
+      {/* Tournament Info Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 className="text-base font-bold text-gray-900 mb-5 pb-3 border-b border-gray-100">
+          Información general
+        </h2>
         <EditTournamentForm tournament={tournament} />
+      </div>
+
+      {/* Categories Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <CategoriesSection tournamentId={tournament.id} />
       </div>
     </div>
   );
 }
+
