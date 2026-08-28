@@ -56,9 +56,17 @@ export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
     <ul className="flex flex-col gap-3">
       {tournaments.map((t) => (
         <li key={t.id}>
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => navigate(`/torneos/${t.id}/editar`)}
-            className="w-full text-left group"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(`/torneos/${t.id}/editar`);
+              }
+            }}
+            className="w-full text-left group cursor-pointer"
           >
             <div className="flex items-center justify-between gap-6 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200">
               {/* Left: badge + name + description */}
@@ -118,7 +126,7 @@ export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
                 </button>
               </div>
             </div>
-          </button>
+          </div>
         </li>
       ))}
     </ul>
