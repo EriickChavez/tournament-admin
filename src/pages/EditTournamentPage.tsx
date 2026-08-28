@@ -3,6 +3,7 @@ import { useTournaments } from "../features/tournaments/hooks/use-tournaments";
 import { EditTournamentForm } from "../features/tournaments/components/EditTournamentForm";
 import { CategoriesSection } from "../features/categories/components/CategoriesSection";
 import { TeamsSection } from "../features/teams/components/TeamsSection";
+import { PlayersSection } from "../features/players/components/PlayersSection";
 
 const ArrowLeftIcon = () => (
   <svg
@@ -79,6 +80,10 @@ export function EditTournamentPage() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <TeamsSection tournamentId={tournament.id} />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <PlayersSection tournamentId={tournament.id} />
       </div>
     </div>
   );
