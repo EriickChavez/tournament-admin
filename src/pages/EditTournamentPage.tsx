@@ -4,6 +4,7 @@ import { EditTournamentForm } from "../features/tournaments/components/EditTourn
 import { CategoriesSection } from "../features/categories/components/CategoriesSection";
 import { TeamsSection } from "../features/teams/components/TeamsSection";
 import { PlayersSection } from "../features/players/components/PlayersSection";
+import { MatchesSection } from "../features/matches/components/MatchesSection";
 
 const ArrowLeftIcon = () => (
   <svg
@@ -84,6 +85,10 @@ export function EditTournamentPage() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <PlayersSection tournamentId={tournament.id} />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <MatchesSection tournamentId={tournament.id} />
       </div>
     </div>
   );
