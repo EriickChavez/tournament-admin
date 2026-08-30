@@ -7,6 +7,7 @@ import { useCategories } from "../../categories/hooks/use-categories";
 import { useTeams } from "../../teams/hooks/use-teams";
 import { PlayerItem } from "./PlayerItem";
 import { PlayerFormModal } from "./PlayerFormModal";
+import { Pagination } from "../../../shared/components/Pagination";
 import { getPlayerErrorMessage } from "../utils/player-error-message";
 import type { Player } from "../types";
 import type { PlayerFormOutput } from "../schemas/player-schema";
@@ -50,19 +51,43 @@ interface PlayersSectionProps {
 }
 
 export function PlayersSection({ tournamentId }: PlayersSectionProps) {
+  const [page, setPage] = useState(1);
+
+  // Si cambia el torneo, arrancamos en la página 1. Se ajusta durante el
+  // render (patrón recomendado por React) en vez de con un useEffect.
+  const [prevTournamentId, setPrevTournamentId] = useState(tournamentId);
+  if (tournamentId !== prevTournamentId) {
+    setPrevTournamentId(tournamentId);
+    setPage(1);
+  }
+
   const {
     data: playersData,
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
-  } = usePlayers(tournamentId);
+  } = usePlayers(tournamentId, page);
   const { data: categoriesData } = useCategories(tournamentId);
-  const { data: teamsData } = useTeams(tournamentId);
+  // Se pide el límite máximo (100) porque esta lista alimenta el selector de
+  // equipos y el lookup de nombres — no es la vista paginada, necesita
+  // "todos" los equipos del torneo, no solo la primera página.
+  const { data: teamsData } = useTeams(tournamentId, 1, 100);
 
   const createPlayer = useCreatePlayer(tournamentId);
   const updatePlayer = useUpdatePlayer(tournamentId);
   const deletePlayer = useDeletePlayer(tournamentId);
+
+  // Si borramos el último jugador de una página y esa página ya no existe,
+  // regresamos a la última página válida.
+  if (
+    playersData &&
+    playersData.pagination.totalPages > 0 &&
+    page > playersData.pagination.totalPages
+  ) {
+    setPage(playersData.pagination.totalPages);
+  }
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -243,6 +268,14 @@ export function PlayersSection({ tournamentId }: PlayersSectionProps) {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && !isError && playersData && (
+        <Pagination
+          pagination={playersData.pagination}
+          onPageChange={setPage}
+          isFetching={isFetching}
+        />
       )}
 
       <PlayerFormModal

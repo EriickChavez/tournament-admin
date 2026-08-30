@@ -4,11 +4,15 @@ import type {
     CreatePlayerPayload,
     UpdatePlayerPayload,
 } from "../types";
+import type {
+    PaginationMeta,
+    PaginationParams,
+} from "../../../shared/types/pagination";
 
 export const playersApi = {
-    listByTournament: (tournamentId: string) =>
-        httpClient.get<{ players: Player[] }>(
-            `/tournaments/${tournamentId}/players`,
+    listByTournament: (tournamentId: string, pagination: PaginationParams) =>
+        httpClient.get<{ players: Player[]; pagination: PaginationMeta }>(
+            `/tournaments/${tournamentId}/players?page=${pagination.page}&limit=${pagination.limit}`,
         ),
 
     create: (tournamentId: string, payload: CreatePlayerPayload) =>

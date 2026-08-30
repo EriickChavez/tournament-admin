@@ -6,6 +6,7 @@ import { useDeleteTeam } from "../hooks/use-delete-team";
 import { useCategories } from "../../categories/hooks/use-categories";
 import { TeamItem } from "./TeamItem";
 import { TeamFormModal } from "./TeamFormModal";
+import { Pagination } from "../../../shared/components/Pagination";
 import { getTeamErrorMessage } from "../utils/team-error-message";
 import type { Team } from "../types";
 import type { TeamFormOutput } from "../schemas/team-schema";
@@ -46,17 +47,39 @@ interface TeamsSectionProps {
 }
 
 export function TeamsSection({ tournamentId }: TeamsSectionProps) {
+  const [page, setPage] = useState(1);
+
+  // Si cambia el torneo, arrancamos en la página 1. Se ajusta durante el
+  // render (patrón recomendado por React) en vez de con un useEffect.
+  const [prevTournamentId, setPrevTournamentId] = useState(tournamentId);
+  if (tournamentId !== prevTournamentId) {
+    setPrevTournamentId(tournamentId);
+    setPage(1);
+  }
+
   const {
     data: teamsData,
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
-  } = useTeams(tournamentId);
+  } = useTeams(tournamentId, page);
   const { data: categoriesData } = useCategories(tournamentId);
   const createTeam = useCreateTeam(tournamentId);
   const updateTeam = useUpdateTeam(tournamentId);
   const deleteTeam = useDeleteTeam(tournamentId);
+
+  // Si borramos el último equipo de una página y esa página ya no existe
+  // (p. ej. estábamos en la página 3 de 3 y ahora solo hay 2), regresamos
+  // a la última página válida.
+  if (
+    teamsData &&
+    teamsData.pagination.totalPages > 0 &&
+    page > teamsData.pagination.totalPages
+  ) {
+    setPage(teamsData.pagination.totalPages);
+  }
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -231,6 +254,14 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
             />
           ))}
         </div>
+      )}
+
+      {!isLoading && !isError && teamsData && (
+        <Pagination
+          pagination={teamsData.pagination}
+          onPageChange={setPage}
+          isFetching={isFetching}
+        />
       )}
 
       <TeamFormModal
