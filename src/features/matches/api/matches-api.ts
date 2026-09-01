@@ -33,6 +33,9 @@ export const matchesApi = {
         );
     },
 
+    getById: (id: string) =>
+        httpClient.get<{ match: Match }>(`/matches/${id}`),
+
     create: (tournamentId: string, payload: CreateMatchPayload) =>
         httpClient.post<{ match: Match }>(
             `/tournaments/${tournamentId}/matches`,

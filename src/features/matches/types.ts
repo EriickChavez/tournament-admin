@@ -5,6 +5,18 @@ export type MatchStatus =
     | "cancelled"
     | "postponed";
 
+export interface MatchTeamSummary {
+    id: string;
+    name: string;
+    abbreviation: string | null;
+    logoUrl: string | null;
+}
+
+export interface MatchCategorySummary {
+    id: string;
+    title: string;
+}
+
 export interface Match {
     id: string;
     tournamentId: string;
@@ -14,6 +26,10 @@ export interface Match {
     scheduledAt: string;
     venue: string | null;
     status: MatchStatus;
+    /** Presente en list/get (respuesta enriquecida del backend). */
+    homeTeam?: MatchTeamSummary;
+    awayTeam?: MatchTeamSummary;
+    category?: MatchCategorySummary;
 }
 
 export interface CreateMatchPayload {

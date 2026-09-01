@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Navigate } from "react-router";
-import { useTournaments } from "../features/tournaments/hooks/use-tournaments";
+import { useTournament } from "../features/tournaments/hooks/use-tournament";
 import { EditTournamentForm } from "../features/tournaments/components/EditTournamentForm";
 import { CategoriesSection } from "../features/categories/components/CategoriesSection";
 import { TeamsSection } from "../features/teams/components/TeamsSection";
@@ -8,8 +8,8 @@ import { MatchesSection } from "../features/matches/components/MatchesSection";
 
 const ArrowLeftIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -24,7 +24,7 @@ const ArrowLeftIcon = () => (
 
 export function EditTournamentPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useTournaments();
+  const { data, isLoading, isError } = useTournament(id);
   const navigate = useNavigate();
 
   if (isLoading)
@@ -47,8 +47,11 @@ export function EditTournamentPage() {
       </div>
     );
 
-  const tournament = data?.tournaments.find((t) => t.id === id);
-  if (!tournament) return <Navigate to="/home" replace />;
+  if (isError || !data?.tournament) {
+    return <Navigate to="/home" replace />;
+  }
+
+  const tournament = data.tournament;
 
   return (
     <div className="w-full flex flex-col gap-6">

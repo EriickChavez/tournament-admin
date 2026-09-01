@@ -171,8 +171,14 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
   }
 
   function handleDeleteMatch(match: Match) {
-    const home = teamNameById.get(match.homeTeamId) ?? "equipo local";
-    const away = teamNameById.get(match.awayTeamId) ?? "equipo visitante";
+    const home =
+      match.homeTeam?.name ??
+      teamNameById.get(match.homeTeamId) ??
+      "equipo local";
+    const away =
+      match.awayTeam?.name ??
+      teamNameById.get(match.awayTeamId) ??
+      "equipo visitante";
     if (
       !window.confirm(
         `¿Eliminar el partido "${home} vs ${away}"? Esta acción no se puede deshacer.`,
@@ -321,9 +327,15 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
             <MatchItem
               key={match.id}
               match={match}
-              homeTeamName={teamNameById.get(match.homeTeamId)}
-              awayTeamName={teamNameById.get(match.awayTeamId)}
-              categoryTitle={categoryTitleById.get(match.categoryId)}
+              homeTeamName={
+                match.homeTeam?.name ?? teamNameById.get(match.homeTeamId)
+              }
+              awayTeamName={
+                match.awayTeam?.name ?? teamNameById.get(match.awayTeamId)
+              }
+              categoryTitle={
+                match.category?.title ?? categoryTitleById.get(match.categoryId)
+              }
               onEdit={handleOpenEdit}
               onDelete={handleDeleteMatch}
               isDeleting={deleteMatch.isPending}
