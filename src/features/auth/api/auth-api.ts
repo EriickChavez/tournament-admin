@@ -1,5 +1,5 @@
 import { httpClient } from '../../../shared/api/http-client'
-import type { User, LoginPayload } from '../types'
+import type { User, LoginPayload, PublicUserSummary } from '../types'
 
 interface AuthResponse {
     user: User
@@ -10,4 +10,6 @@ export const authApi = {
     logout: () => httpClient.post<void>('/auth/logout'),
     logoutAll: () => httpClient.post<void>('/auth/logout-all'),
     me: () => httpClient.get<AuthResponse>('/auth/me'),
+    lookupByEmail: (email: string) =>
+        httpClient.get<{ user: PublicUserSummary }>(`/users/lookup?email=${encodeURIComponent(email)}`),
 }
