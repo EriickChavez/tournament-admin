@@ -5,7 +5,11 @@ import { ApiError } from "../../../shared/types/api-error";
 import type { EditTournamentFormValues } from "../schemas/create-tournament-schema";
 import { getTournamentErrorMessage } from "../utils/create-tournament-error-message";
 
-export function CreateTournamentForm() {
+interface CreateTournamentFormProps {
+  onCancel?: () => void;
+}
+
+export function CreateTournamentForm({ onCancel }: CreateTournamentFormProps) {
   const navigate = useNavigate();
   const createTournament = useCreateTournament();
 
@@ -42,6 +46,7 @@ export function CreateTournamentForm() {
   return (
     <TournamentForm
       onSubmit={handleSubmit}
+      onCancel={onCancel}
       submitting={createTournament.isPending}
       submitLabel="Crear torneo"
       generalError={generalError}

@@ -1,6 +1,6 @@
 import type { User } from "../../auth/types";
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -21,36 +21,61 @@ function NavItem({
 }: NavItemProps) {
   return (
     <button
+      type="button"
       disabled={disabled}
       onClick={onClick}
       title={collapsed ? label : undefined}
-      className={`group w-full flex items-center gap-3 min-h-10 rounded-lg text-sm font-medium transition-colors ${
+      className={[
+        "group relative flex min-h-11 w-full items-center gap-3 rounded-xl",
+        "text-sm font-medium transition-all duration-200",
+        collapsed ? "justify-center px-0" : "px-3",
         active
-          ? "bg-primary text-white"
+          ? "bg-primary text-white shadow-sm"
           : disabled
-            ? "text-gray-400"
-            : "text-gray-600 hover:bg-blue-50 hover:text-primary"
-      } ${collapsed ? "justify-center px-0" : "px-3"}`}
+            ? "cursor-not-allowed text-gray-300"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-950",
+      ].join(" ")}
     >
+      {active && (
+        <span className="absolute left-0 h-5 w-0.5 rounded-r-full bg-white/80" />
+      )}
+
       <span
-        className={`shrink-0 flex items-center justify-center ${active ? "text-white" : "text-gray-500 group-hover:text-primary"}`}
+        className={[
+          "flex shrink-0 items-center justify-center",
+          active
+            ? "text-white"
+            : disabled
+              ? "text-gray-300"
+              : "text-gray-400 transition-colors group-hover:text-gray-700",
+        ].join(" ")}
       >
         {icon}
       </span>
+
       {!collapsed && <span className="truncate">{label}</span>}
+
+      {!collapsed && disabled && (
+        <span className="ml-auto rounded-md bg-gray-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-300">
+          Próximamente
+        </span>
+      )}
     </button>
   );
 }
 
-// Icons (SVG representations)
+/* -------------------------------------------------------------------------- */
+/* Icons                                                                      */
+/* -------------------------------------------------------------------------- */
+
 const PanelIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -63,12 +88,12 @@ const PanelIcon = () => (
 
 const AnaliticsIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -80,12 +105,12 @@ const AnaliticsIcon = () => (
 
 const UsuariosIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -98,12 +123,12 @@ const UsuariosIcon = () => (
 
 const TorneoIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -118,12 +143,12 @@ const TorneoIcon = () => (
 
 const EquiposIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -136,12 +161,12 @@ const EquiposIcon = () => (
 
 const JugadoresIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -152,12 +177,12 @@ const JugadoresIcon = () => (
 
 const CalendarioIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -170,12 +195,12 @@ const CalendarioIcon = () => (
 
 const ConfigIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -186,12 +211,12 @@ const ConfigIcon = () => (
 
 const PersonalizacionIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -205,12 +230,12 @@ const PersonalizacionIcon = () => (
 
 const AyudaIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="19"
+    height="19"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -222,12 +247,12 @@ const AyudaIcon = () => (
 
 const LogoutIcon = () => (
   <svg
-    width="20"
-    height="20"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -239,8 +264,8 @@ const LogoutIcon = () => (
 
 const ChevronLeft = () => (
   <svg
-    width="16"
-    height="16"
+    width="15"
+    height="15"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -254,8 +279,8 @@ const ChevronLeft = () => (
 
 const ChevronRight = () => (
   <svg
-    width="16"
-    height="16"
+    width="15"
+    height="15"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -266,6 +291,10 @@ const ChevronRight = () => (
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar                                                                    */
+/* -------------------------------------------------------------------------- */
 
 export function Sidebar({
   user,
@@ -286,211 +315,262 @@ export function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = location.pathname;
 
-  // Close mobile sidebar if window resizes to desktop
+  const currentPath = location.pathname;
+  const show = !collapsed || mobileOpen;
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024 && mobileOpen && onCloseMobile) {
         onCloseMobile();
       }
     };
+
     window.addEventListener("resize", handleResize);
+
     return () => window.removeEventListener("resize", handleResize);
   }, [mobileOpen, onCloseMobile]);
 
   const go = (path: string) => {
     navigate(path);
-    if (onCloseMobile) onCloseMobile();
+    onCloseMobile?.();
   };
 
   const isActive = (path: string) =>
-    currentPath === path || currentPath.startsWith(path + "/");
-  const show = !collapsed || mobileOpen;
+    currentPath === path || currentPath.startsWith(`${path}/`);
+
+  const initials =
+    user?.displayName
+      ?.split(" ")
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() ?? "EC";
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile backdrop */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Sidebar container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-100 flex flex-col h-full transition-all duration-300 ease-in-out lg:relative
-          ${collapsed ? "lg:w-20" : "lg:w-64"}
-          ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"}
-        `}
+        className={[
+          "fixed inset-y-0 left-0 z-50 flex h-full flex-col",
+          "border-r border-gray-200/80 bg-white",
+          "transition-all duration-300 ease-in-out",
+          "lg:relative lg:z-auto",
+          collapsed ? "lg:w-[76px]" : "lg:w-[272px]",
+          mobileOpen
+            ? "w-[272px] translate-x-0"
+            : "-translate-x-full lg:translate-x-0",
+        ].join(" ")}
       >
-        {/* Logo Area */}
-        <div className="p-4 flex items-center gap-3 relative">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shrink-0">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="4" />
-            </svg>
-          </div>
-          {show && (
-            <span className="font-bold text-xl tracking-tight text-gray-900 truncate">
-              Nova
+        {/* Brand */}
+        <div
+          className={[
+            "flex h-[76px] shrink-0 items-center border-b border-gray-100",
+            show ? "px-5" : "justify-center px-3",
+          ].join(" ")}
+        >
+          <button
+            type="button"
+            onClick={() => go("/home")}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+              <TorneoIcon />
             </span>
-          )}
 
-          {/* Collapse Toggle for Desktop */}
+            {show && (
+              <span className="truncate text-lg font-bold tracking-tight text-gray-950">
+                Nova
+              </span>
+            )}
+          </button>
+
           {onToggleCollapse && (
             <button
+              type="button"
               onClick={onToggleCollapse}
-              className="absolute -right-3 top-5 hidden lg:flex items-center justify-center w-6 h-6 bg-white border border-gray-200 rounded-full text-gray-400 hover:text-gray-700 hover:shadow-sm transition-all"
-              title={collapsed ? "Expandir" : "Colapsar"}
+              className="absolute -right-3 top-[29px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:text-gray-800 hover:shadow-md lg:flex"
+              title={collapsed ? "Expandir menú" : "Colapsar menú"}
             >
               {collapsed ? <ChevronRight /> : <ChevronLeft />}
             </button>
           )}
         </div>
 
-        <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto mt-2">
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
           {/* General */}
-          {show ? (
-            <p className="text-xs font-medium text-gray-400 px-3 mt-4 mb-2">
-              General
-            </p>
-          ) : (
-            <div className="mt-6 mb-2 border-t border-gray-100 mx-2" />
-          )}
+          {show ? <SectionLabel>General</SectionLabel> : <SectionDivider />}
 
-          <NavItem
-            icon={<PanelIcon />}
-            label="Panel"
-            active={currentPath === "/home"}
-            collapsed={!show}
-            onClick={() => go("/home")}
-          />
-          <NavItem
-            icon={<AnaliticsIcon />}
-            label="Analitics"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/analitics")}
-          />
-          <NavItem
-            icon={<UsuariosIcon />}
-            label="Usuarios"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/usuarios")}
-          />
+          <div className="space-y-1">
+            <NavItem
+              icon={<PanelIcon />}
+              label="Panel"
+              active={currentPath === "/home"}
+              collapsed={!show}
+              onClick={() => go("/home")}
+            />
 
-          {/* Torneo */}
-          {show ? (
-            <p className="text-xs font-medium text-gray-400 px-3 mt-6 mb-2">
-              Torneo
-            </p>
-          ) : (
-            <div className="mt-6 mb-2 border-t border-gray-100 mx-2" />
-          )}
+            <NavItem
+              icon={<AnaliticsIcon />}
+              label="Analítica"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/analitics")}
+            />
 
-          <NavItem
-            icon={<TorneoIcon />}
-            label="Tu torneo"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/torneo")}
-          />
-          <NavItem
-            icon={<EquiposIcon />}
-            label="Equipos"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/equipos")}
-          />
-          <NavItem
-            icon={<JugadoresIcon />}
-            label="Jugadores"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/jugadores")}
-          />
-          <NavItem
-            icon={<CalendarioIcon />}
-            label="Calendario"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/calendario")}
-          />
-
-          {/* Sistema */}
-          {show ? (
-            <p className="text-xs font-medium text-gray-400 px-3 mt-6 mb-2">
-              Sistema
-            </p>
-          ) : (
-            <div className="mt-6 mb-2 border-t border-gray-100 mx-2" />
-          )}
-
-          <NavItem
-            icon={<ConfigIcon />}
-            label="Configuracion"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/configuracion")}
-          />
-          <NavItem
-            icon={<PersonalizacionIcon />}
-            label="Personalizacion"
-            active={isActive("/personalizacion")}
-            collapsed={!show}
-            onClick={() => go("/personalizacion")}
-          />
-          <NavItem
-            icon={<AyudaIcon />}
-            label="Ayuda"
-            collapsed={!show}
-            disabled
-            onClick={() => go("/home/ayuda")}
-          />
-        </nav>
-
-        {/* User Profile Area */}
-        <div
-          className={`p-4 border-t border-gray-100 flex items-center ${show ? "gap-3" : "justify-center"}`}
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/10 shrink-0 flex items-center justify-center text-sm font-bold text-primary">
-            {user?.displayName?.slice(0, 2).toUpperCase() ?? "EC"}
+            <NavItem
+              icon={<UsuariosIcon />}
+              label="Usuarios"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/usuarios")}
+            />
           </div>
 
-          {show && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">
-                {user?.displayName || "Erick Chavez"}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email || "Erick@ch.com"}
-              </p>
-            </div>
+          {/* Tournament */}
+          {show ? (
+            <SectionLabel className="mt-7">Torneo</SectionLabel>
+          ) : (
+            <SectionDivider className="mt-7" />
           )}
 
-          <button
-            onClick={onLogout}
-            disabled={loggingOut}
-            className={`p-2 text-gray-400 hover:text-gray-700 disabled:opacity-50 rounded-lg hover:bg-gray-50 ${show ? "" : "hidden"}`}
-            title="Cerrar sesión"
+          <div className="space-y-1">
+            <NavItem
+              icon={<TorneoIcon />}
+              label="Tu torneo"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/torneo")}
+            />
+
+            <NavItem
+              icon={<EquiposIcon />}
+              label="Equipos"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/equipos")}
+            />
+
+            <NavItem
+              icon={<JugadoresIcon />}
+              label="Jugadores"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/jugadores")}
+            />
+
+            <NavItem
+              icon={<CalendarioIcon />}
+              label="Calendario"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/calendario")}
+            />
+          </div>
+
+          {/* System */}
+          {show ? (
+            <SectionLabel className="mt-7">Sistema</SectionLabel>
+          ) : (
+            <SectionDivider className="mt-7" />
+          )}
+
+          <div className="space-y-1">
+            <NavItem
+              icon={<ConfigIcon />}
+              label="Configuración"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/configuracion")}
+            />
+
+            <NavItem
+              icon={<PersonalizacionIcon />}
+              label="Personalización"
+              active={isActive("/personalizacion")}
+              collapsed={!show}
+              onClick={() => go("/personalizacion")}
+            />
+
+            <NavItem
+              icon={<AyudaIcon />}
+              label="Ayuda"
+              collapsed={!show}
+              disabled
+              onClick={() => go("/home/ayuda")}
+            />
+          </div>
+        </nav>
+
+        {/* User */}
+        <div className="shrink-0 border-t border-gray-100 p-3">
+          <div
+            className={[
+              "flex items-center rounded-2xl bg-gray-50",
+              show ? "gap-3 p-3" : "justify-center p-2",
+            ].join(" ")}
           >
-            <LogoutIcon />
-          </button>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              {initials}
+            </div>
+
+            {show && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {user?.displayName || "Erick Chavez"}
+                  </p>
+
+                  <p className="mt-0.5 truncate text-xs text-gray-400">
+                    {user?.email || "Erick@ch.com"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  disabled={loggingOut}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white hover:text-gray-700 disabled:opacity-50"
+                  title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
+                >
+                  <LogoutIcon />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </aside>
     </>
   );
+}
+
+function SectionLabel({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      className={`mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400 ${className}`}
+    >
+      {children}
+    </p>
+  );
+}
+
+function SectionDivider({ className = "" }: { className?: string }) {
+  return <div className={`mx-2 mb-2 border-t border-gray-100 ${className}`} />;
 }

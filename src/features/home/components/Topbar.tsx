@@ -114,40 +114,56 @@ export function Topbar({
   }, [mode, primaryColor]);
 
   return (
-    <header className="flex items-center justify-between p-4 border-b border-gray-100 bg-white">
-      <div className="flex items-center gap-3">
-        {onOpenMobile && (
+    <header className="h-16 shrink-0 border-b border-gray-200/70 bg-white/95 backdrop-blur">
+      <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          {onOpenMobile && (
+            <button
+              onClick={onOpenMobile}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-gray-100 lg:hidden"
+              aria-label="Abrir menú"
+            >
+              <MenuIcon />
+            </button>
+          )}
+
+          <div className="hidden h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600 sm:flex">
+            <PanelTopIcon />
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-gray-900">
+              Panel
+            </h2>
+
+            <p className="hidden text-xs text-gray-400 sm:block">
+              Resumen general
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
-            onClick={onOpenMobile}
-            className="lg:hidden w-10 h-10 flex items-center justify-center text-gray-700 hover:bg-gray-50 rounded-lg"
+            onClick={toggleMode}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800"
+            title="Alternar tema"
+            aria-label="Alternar tema"
           >
-            <MenuIcon />
+            {mode === "light" ? <SunIcon /> : <MoonIcon />}
           </button>
-        )}
-        <div className="hidden sm:flex w-10 h-10 border border-gray-200 rounded-xl items-center justify-center text-gray-700 bg-white">
-          <PanelTopIcon />
-        </div>
-        <div>
-          <h2 className="font-bold text-gray-900 leading-tight">Panel</h2>
-          <p className="text-xs text-gray-400">Resumen general</p>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <button
-          onClick={toggleMode}
-          className="w-10 h-10 border border-gray-200 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-          title="Alternar tema"
-        >
-          {mode === "light" ? <SunIcon /> : <MoonIcon />}
-        </button>
+          <button
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800"
+            aria-label="Notificaciones"
+          >
+            <BellIcon />
 
-        <button className="w-10 h-10 border border-gray-200 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors">
-          <BellIcon />
-        </button>
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+          </button>
 
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-700 ml-1">
-          {initials}
+          <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            {initials}
+          </div>
         </div>
       </div>
     </header>

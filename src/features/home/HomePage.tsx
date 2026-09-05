@@ -25,40 +25,65 @@ export function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-2xl font-bold text-gray-900 mt-2">Buenas tardes</h1>
-      <p className="text-sm text-gray-500 mt-1">
-        Esto es lo que sucede en tu torneo
-      </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            Administración
+          </p>
 
-      <div className="mt-6">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">
+            Buenas tardes
+          </h1>
+
+          <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
+            Administra tus torneos, equipos, jugadores y partidos desde un solo
+            lugar.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate("/torneos/crear")}
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 hover:shadow-md"
+        >
+          <PlusIcon />
+          Nuevo torneo
+        </button>
+      </section>
+
+      {/* Content */}
+      <section>
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
-            <svg
-              className="animate-spin text-primary"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            >
-              <path d="M12 2a10 10 0 0 1 10 10" opacity="0.3" />
-              <path d="M12 2a10 10 0 0 1 10 10" />
-            </svg>
-            Cargando torneos...
+          <div className="flex min-h-32 items-center justify-center rounded-2xl border border-gray-200 bg-white">
+            <div className="flex items-center gap-3 text-sm text-gray-500">
+              <svg
+                className="animate-spin text-primary"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <path d="M12 2a10 10 0 0 1 10 10" opacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" />
+              </svg>
+              Cargando torneos...
+            </div>
           </div>
         )}
 
         {isError && (
-          <div className="rounded-2xl bg-red-50 border border-red-100 p-4 flex flex-col items-start gap-3">
-            <p className="text-sm text-red-600">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+            <p className="text-sm font-medium text-red-700">
               {getTournamentErrorMessage(error)}
             </p>
+
             <button
               onClick={() => refetch()}
-              className="min-h-9 px-4 rounded-xl border border-red-200 text-sm text-red-600 hover:bg-red-100 transition-colors"
+              className="mt-4 min-h-9 rounded-xl border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
             >
               Reintentar
             </button>
@@ -66,21 +91,26 @@ export function HomePage() {
         )}
 
         {data && data.tournaments.length === 0 && <EmptyTournamentState />}
+
         {data && data.tournaments.length > 0 && (
-          <>
-            <div className="flex justify-end mb-3">
-              <button
-                onClick={() => navigate("/torneos/crear")}
-                className="min-h-10 px-4 rounded-xl bg-primary text-white text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
-              >
-                <PlusIcon />
-                Nuevo torneo
-              </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Tus torneos
+                </h2>
+
+                <p className="mt-1 text-xs text-gray-400">
+                  {data.tournaments.length}{" "}
+                  {data.tournaments.length === 1 ? "torneo" : "torneos"}
+                </p>
+              </div>
             </div>
+
             <TournamentList tournaments={data.tournaments} />
-          </>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

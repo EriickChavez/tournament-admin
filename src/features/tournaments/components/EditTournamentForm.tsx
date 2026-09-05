@@ -6,7 +6,15 @@ import type { Tournament } from "../types";
 import type { EditTournamentFormValues } from "../schemas/create-tournament-schema";
 import { getTournamentErrorMessage } from "../utils/create-tournament-error-message";
 
-export function EditTournamentForm({ tournament }: { tournament: Tournament }) {
+interface EditTournamentFormProps {
+  tournament: Tournament;
+  onCancel?: () => void;
+}
+
+export function EditTournamentForm({
+  tournament,
+  onCancel,
+}: EditTournamentFormProps) {
   const navigate = useNavigate();
   const updateTournament = useUpdateTournament(tournament.id);
 
@@ -69,6 +77,7 @@ export function EditTournamentForm({ tournament }: { tournament: Tournament }) {
         timezone: tournament.timezone,
       }}
       onSubmit={handleSubmit}
+      onCancel={onCancel}
       submitting={updateTournament.isPending}
       submitLabel="Guardar cambios"
       generalError={generalError}

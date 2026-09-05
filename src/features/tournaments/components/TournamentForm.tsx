@@ -8,6 +8,7 @@ import {
 interface TournamentFormProps {
   defaultValues?: Partial<EditTournamentFormValues>;
   onSubmit: (values: EditTournamentFormValues, changedName: boolean) => void;
+  onCancel?: () => void;
   submitting: boolean;
   submitLabel: string;
   generalError?: string | null;
@@ -28,6 +29,7 @@ interface TournamentFormProps {
 export function TournamentForm({
   defaultValues,
   onSubmit,
+  onCancel,
   submitting,
   submitLabel,
   generalError,
@@ -82,156 +84,179 @@ export function TournamentForm({
   }
 
   const inputClass =
-    "w-full min-h-11 px-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
+    "w-full h-12 px-4 border border-gray-200/80 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
+
+  const labelClass = "block text-[13px] font-medium text-gray-600 mb-2";
+  const optionalClass = "text-gray-400 font-normal";
+  const errorClass = "text-xs text-red-500 mt-2";
 
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className="w-full flex flex-col gap-5"
+      className="w-full flex flex-col gap-8"
     >
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 mb-1.5"
-        >
-          Nombre del torneo
-        </label>
-        <input id="name" className={inputClass} {...register("name")} />
-        {nameChanged && (
-          <div className="mt-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2">
-            <p className="text-xs text-amber-700">
-              ⚠ Cambiar el nombre generará una nueva URL pública; los enlaces
-              anteriores dejarán de funcionar.
-            </p>
+      {/* Información general */}
+      <section className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <header className="px-6 pt-6 pb-5 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900">
+            Información general
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Datos básicos que verán los participantes
+          </p>
+        </header>
+
+        <div className="px-6 py-6 space-y-6">
+          <div>
+            <label htmlFor="name" className={labelClass}>
+              Nombre del torneo
+            </label>
+            <input
+              id="name"
+              className={inputClass}
+              placeholder="Ej. Liga Municipal 2026"
+              {...register("name")}
+            />
+            {nameChanged && (
+              <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100/80 px-4 py-3">
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  ⚠ Cambiar el nombre generará una nueva URL pública; los
+                  enlaces anteriores dejarán de funcionar.
+                </p>
+              </div>
+            )}
+            {errors.name && <p className={errorClass}>{errors.name.message}</p>}
           </div>
-        )}
-        {errors.name && (
-          <p className="text-xs text-red-500 mt-1.5">{errors.name.message}</p>
-        )}
-      </div>
 
-      <div>
-        <label
-          htmlFor="subtitle"
-          className="block text-sm font-medium text-gray-700 mb-1.5"
-        >
-          Subtítulo{" "}
-          <span className="text-gray-400 font-normal">(opcional)</span>
-        </label>
-        <input id="subtitle" className={inputClass} {...register("subtitle")} />
-        {errors.subtitle && (
-          <p className="text-xs text-red-500 mt-1.5">
-            {errors.subtitle.message}
-          </p>
-        )}
-      </div>
+          <div>
+            <label htmlFor="subtitle" className={labelClass}>
+              Subtítulo <span className={optionalClass}>(opcional)</span>
+            </label>
+            <input
+              id="subtitle"
+              className={inputClass}
+              placeholder="Ej. Temporada de primavera"
+              {...register("subtitle")}
+            />
+            {errors.subtitle && (
+              <p className={errorClass}>{errors.subtitle.message}</p>
+            )}
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label
-            htmlFor="startDate"
-            className="block text-sm font-medium text-gray-700 mb-1.5"
-          >
-            Fecha de inicio{" "}
-            <span className="text-gray-400 font-normal">(opcional)</span>
-          </label>
-          <input
-            id="startDate"
-            type="date"
-            className={inputClass}
-            min={new Date().toISOString().split("T")[0]}
-            {...register("startDate")}
-          />
-          {errors.startDate && (
-            <p className="text-xs text-red-500 mt-1.5">
-              {errors.startDate.message}
-            </p>
-          )}
+          <div>
+            <label htmlFor="description" className={labelClass}>
+              Descripción <span className={optionalClass}>(opcional)</span>
+            </label>
+            <textarea
+              id="description"
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-200/80 rounded-xl text-sm text-gray-900 bg-white placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none leading-relaxed"
+              placeholder="Cuéntales de qué se trata el torneo..."
+              {...register("description")}
+            />
+            {errors.description && (
+              <p className={errorClass}>{errors.description.message}</p>
+            )}
+          </div>
         </div>
+      </section>
 
-        <div>
-          <label
-            htmlFor="endDate"
-            className="block text-sm font-medium text-gray-700 mb-1.5"
-          >
-            Fecha de fin{" "}
-            <span className="text-gray-400 font-normal">(opcional)</span>
-          </label>
-          <input
-            id="endDate"
-            type="date"
-            className={inputClass}
-            min={new Date().toISOString().split("T")[0]}
-            {...register("endDate")}
-          />
-          {errors.endDate && (
-            <p className="text-xs text-red-500 mt-1.5">
-              {errors.endDate.message}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="timezone"
-          className="block text-sm font-medium text-gray-700 mb-1.5"
-        >
-          Zona horaria
-        </label>
-        <div className="relative">
-          <input
-            id="timezone"
-            type="text"
-            readOnly
-            className={`${inputClass} bg-gray-100/70 text-gray-600 cursor-not-allowed`}
-            {...register("timezone")}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 bg-gray-200/60 px-2 py-0.5 rounded-md">
-            Automática
-          </span>
-        </div>
-        {errors.timezone && (
-          <p className="text-xs text-red-500 mt-1.5">
-            {errors.timezone.message}
+      {/* Fechas y ubicación */}
+      <section className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <header className="px-6 pt-6 pb-5 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900">
+            Fechas y ubicación
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Cuándo se juega y en qué zona horaria
           </p>
-        )}
-      </div>
+        </header>
 
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-1.5"
-        >
-          Descripción{" "}
-          <span className="text-gray-400 font-normal">(opcional)</span>
-        </label>
-        <textarea
-          id="description"
-          rows={4}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
-          {...register("description")}
-        />
-        {errors.description && (
-          <p className="text-xs text-red-500 mt-1.5">
-            {errors.description.message}
-          </p>
-        )}
-      </div>
+        <div className="px-6 py-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="startDate" className={labelClass}>
+                Fecha de inicio{" "}
+                <span className={optionalClass}>(opcional)</span>
+              </label>
+              <input
+                id="startDate"
+                type="date"
+                className={inputClass}
+                min={new Date().toISOString().split("T")[0]}
+                {...register("startDate")}
+              />
+              {errors.startDate && (
+                <p className={errorClass}>{errors.startDate.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="endDate" className={labelClass}>
+                Fecha de fin <span className={optionalClass}>(opcional)</span>
+              </label>
+              <input
+                id="endDate"
+                type="date"
+                className={inputClass}
+                min={new Date().toISOString().split("T")[0]}
+                {...register("endDate")}
+              />
+              {errors.endDate && (
+                <p className={errorClass}>{errors.endDate.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="timezone" className={labelClass}>
+              Zona horaria
+            </label>
+            <div className="relative">
+              <input
+                id="timezone"
+                type="text"
+                readOnly
+                className={`${inputClass} bg-gray-50 text-gray-600 cursor-not-allowed pr-28`}
+                {...register("timezone")}
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
+                Automática
+              </span>
+            </div>
+            {errors.timezone && (
+              <p className={errorClass}>{errors.timezone.message}</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       {generalError && (
-        <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2.5">
+        <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3.5">
           <p className="text-sm text-red-600">{generalError}</p>
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="min-h-11 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-      >
-        {submitting ? "Guardando..." : submitLabel}
-      </button>
+      {/* Acciones */}
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-2 pb-4">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="h-11 px-5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="h-11 px-7 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {submitting ? "Guardando..." : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

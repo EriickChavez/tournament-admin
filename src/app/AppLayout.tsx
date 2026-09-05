@@ -9,6 +9,7 @@ export function AppLayout() {
   const { data } = useCurrentUser();
   const logout = useLogout();
   const navigate = useNavigate();
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -19,21 +20,27 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen h-svh flex bg-gray-50 font-sans">
-      <Sidebar
-        user={data?.user}
-        onLogout={handleLogout}
-        loggingOut={logout.isPending}
-        collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed(!collapsed)}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={data?.user} onOpenMobile={() => setMobileOpen(true)} />
-        <main className="flex-1 p-6 lg:px-8">
-          <Outlet />
-        </main>
+    <div className="min-h-screen h-svh bg-[var(--theme-bg)] text-[var(--theme-text)] font-sans">
+      <div className="flex h-full overflow-hidden">
+        <Sidebar
+          user={data?.user}
+          onLogout={handleLogout}
+          loggingOut={logout.isPending}
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((value) => !value)}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar user={data?.user} onOpenMobile={() => setMobileOpen(true)} />
+
+          <main className="min-w-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1440px] px-5 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-10">
+              <Outlet />
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
