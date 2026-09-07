@@ -7,6 +7,7 @@ import { TeamsSection } from "../features/teams/components/TeamsSection";
 import { PlayersSection } from "../features/players/components/PlayersSection";
 import { MatchesSection } from "../features/matches/components/MatchesSection";
 import { MembersSection } from "../features/members/components/MembersSection";
+import { BrandingSection } from "../features/branding/components/BrandingSection";
 
 const ArrowLeftIcon = () => (
   <svg
@@ -26,6 +27,7 @@ const ArrowLeftIcon = () => (
 
 type TabId =
   | "info"
+  | "branding"
   | "categories"
   | "teams"
   | "players"
@@ -34,6 +36,7 @@ type TabId =
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "info", label: "Información" },
+  { id: "branding", label: "Branding" },
   { id: "categories", label: "Categorías" },
   { id: "teams", label: "Equipos" },
   { id: "players", label: "Jugadores" },
@@ -130,6 +133,12 @@ export function EditTournamentPage() {
             tournament={tournament}
             onCancel={() => navigate(-1)}
           />
+        )}
+
+        {activeTab === "branding" && (
+          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
+            <BrandingSection tournamentId={tournament.id} />
+          </div>
         )}
 
         {activeTab === "categories" && (
