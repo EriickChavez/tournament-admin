@@ -8,6 +8,7 @@ import { PlayersSection } from "../features/players/components/PlayersSection";
 import { MatchesSection } from "../features/matches/components/MatchesSection";
 import { MembersSection } from "../features/members/components/MembersSection";
 import { BrandingSection } from "../features/branding/components/BrandingSection";
+import { SponsorsSection } from "../features/sponsors/components/SponsorsSection";
 
 const ArrowLeftIcon = () => (
   <svg
@@ -29,6 +30,7 @@ type TabId =
   | "info"
   | "branding"
   | "categories"
+  | "sponsors"
   | "teams"
   | "players"
   | "matches"
@@ -38,6 +40,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "info", label: "Información" },
   { id: "branding", label: "Branding" },
   { id: "categories", label: "Categorías" },
+  { id: "sponsors", label: "Sponsors" },
   { id: "teams", label: "Equipos" },
   { id: "players", label: "Jugadores" },
   { id: "matches", label: "Partidos" },
@@ -144,6 +147,15 @@ export function EditTournamentPage() {
         {activeTab === "categories" && (
           <div className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
             <CategoriesSection tournamentId={tournament.id} />
+          </div>
+        )}
+
+        {activeTab === "sponsors" && (
+          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
+            <SponsorsSection
+              tournamentId={tournament.id}
+              maxSponsors={tournament.maxSponsors ?? 0}
+            />
           </div>
         )}
 
