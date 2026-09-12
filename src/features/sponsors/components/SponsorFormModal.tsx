@@ -15,6 +15,10 @@ const ALLOWED_LOGO_TYPES = [
   "image/jpg",
 ];
 const MAX_LOGO_SIZE_MB = 2;
+const ALLOWED_PDF_TYPES = ["application/pdf"];
+const MAX_PDF_SIZE_MB = 10;
+
+type PdfMode = "keep" | "none" | "file" | "url" | "remove";
 
 const CloseIcon = () => (
   <svg
@@ -34,6 +38,9 @@ const CloseIcon = () => (
 
 export interface SponsorSubmitValues extends SponsorFormOutput {
   logo: File | null;
+  pdf: File | null;
+  pdfUrl?: string;
+  removePdf?: boolean;
 }
 
 interface SponsorFormModalProps {
@@ -57,6 +64,11 @@ export function SponsorFormModal({
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
 
+  const [pdfMode, setPdfMode] = useState<PdfMode>("none");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfUrlText, setPdfUrlText] = useState("");
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   const {
     control,
     register,
@@ -78,6 +90,10 @@ export function SponsorFormModal({
     if (!isOpen) return;
     setLogoFile(null);
     setLogoError(null);
+    setPdfFile(null);
+    setPdfUrlText("");
+    setPdfError(null);
+    setPdfMode(sponsor?.pdfUrl ? "keep" : "none");
     if (sponsor) {
       reset({
         name: sponsor.name,
@@ -117,6 +133,24 @@ export function SponsorFormModal({
     setLogoFile(file);
   }
 
+  function handlePdfChange(file: File | null) {
+    if (!file) {
+      setPdfFile(null);
+      setPdfError(null);
+      return;
+    }
+    if (!ALLOWED_PDF_TYPES.includes(file.type)) {
+      setPdfError("Formato no permitido. Solo PDF.");
+      return;
+    }
+    if (file.size > MAX_PDF_SIZE_MB * 1024 * 1024) {
+      setPdfError(`El archivo excede el máximo de ${MAX_PDF_SIZE_MB}MB.`);
+      return;
+    }
+    setPdfError(null);
+    setPdfFile(file);
+  }
+
   function submit(values: SponsorFormOutput) {
     // En creación el logo es obligatorio (la API exige logo o logoUrl);
     // en edición es opcional, se conserva el logo actual si no se elige uno nuevo.
@@ -124,11 +158,47 @@ export function SponsorFormModal({
       setLogoError("El logo es requerido");
       return;
     }
-    onSubmit({ ...values, logo: logoFile });
+    if (pdfMode === "file" && !pdfFile) {
+      setPdfError("Selecciona un archivo PDF.");
+      return;
+    }
+    if (pdfMode === "url" && !pdfUrlText.trim()) {
+      setPdfError("Escribe la URL del PDF.");
+      return;
+    }
+
+    // Un sponsor no puede tener sitio web y PDF al mismo tiempo.
+    const websiteUrl = values.websiteUrl?.trim();
+    const willHavePdf =
+      pdfMode === "file" || pdfMode === "url" || pdfMode === "keep";
+    if (websiteUrl && willHavePdf) {
+      setPdfError("No puede tener sitio web y PDF al mismo tiempo.");
+      return;
+    }
+
+    const submitValues: SponsorSubmitValues = {
+      ...values,
+      logo: logoFile,
+      pdf: null,
+    };
+    if (pdfMode === "file") submitValues.pdf = pdfFile;
+    if (pdfMode === "url") submitValues.pdfUrl = pdfUrlText.trim();
+    if (pdfMode === "remove") submitValues.removePdf = true;
+
+    onSubmit(submitValues);
   }
 
   const inputClass =
     "w-full min-h-11 px-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
+
+  const modeBtnClass = (active: boolean, danger?: boolean) =>
+    `px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+      active
+        ? danger
+          ? "bg-red-600 text-white border-red-600"
+          : "bg-primary text-white border-primary"
+        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+    }`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -224,6 +294,87 @@ export function SponsorFormModal({
             </p>
             {logoError && (
               <p className="text-xs text-red-500 mt-1.5">{logoError}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              PDF <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {isEdit && sponsor?.pdfUrl && (
+                <button
+                  type="button"
+                  className={modeBtnClass(pdfMode === "keep")}
+                  onClick={() => setPdfMode("keep")}
+                >
+                  Mantener actual
+                </button>
+              )}
+              <button
+                type="button"
+                className={modeBtnClass(pdfMode === "file")}
+                onClick={() => setPdfMode("file")}
+              >
+                Subir archivo
+              </button>
+              <button
+                type="button"
+                className={modeBtnClass(pdfMode === "url")}
+                onClick={() => setPdfMode("url")}
+              >
+                URL externa
+              </button>
+              {isEdit && sponsor?.pdfUrl && (
+                <button
+                  type="button"
+                  className={modeBtnClass(pdfMode === "remove", true)}
+                  onClick={() => setPdfMode("remove")}
+                >
+                  Quitar pdf
+                </button>
+              )}
+              {!isEdit && (
+                <button
+                  type="button"
+                  className={modeBtnClass(pdfMode === "none")}
+                  onClick={() => setPdfMode("none")}
+                >
+                  Sin pdf
+                </button>
+              )}
+            </div>
+
+            {pdfMode === "keep" && sponsor?.pdfUrl && (
+              <p className="text-xs text-gray-500 truncate">{sponsor.pdfUrl}</p>
+            )}
+            {pdfMode === "file" && (
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => handlePdfChange(e.target.files?.[0] ?? null)}
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:text-xs file:font-medium"
+              />
+            )}
+            {pdfMode === "url" && (
+              <input
+                value={pdfUrlText}
+                onChange={(e) => setPdfUrlText(e.target.value)}
+                className={inputClass}
+                placeholder="https://..."
+              />
+            )}
+            {pdfMode === "remove" && (
+              <p className="text-xs text-red-600">
+                El pdf actual se eliminará al guardar.
+              </p>
+            )}
+            <p className="text-[11px] text-gray-400 mt-1">
+              Solo PDF, máx. {MAX_PDF_SIZE_MB}MB. No puede tener sitio web y PDF
+              al mismo tiempo.
+            </p>
+            {pdfError && (
+              <p className="text-xs text-red-500 mt-1.5">{pdfError}</p>
             )}
           </div>
 

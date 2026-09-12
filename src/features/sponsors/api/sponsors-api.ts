@@ -14,6 +14,10 @@ function toFormData(payload: CreateSponsorPayload | UpdateSponsorPayload): FormD
     if (payload.logoUrl !== undefined) formData.append("logoUrl", payload.logoUrl);
     if (payload.websiteUrl !== undefined && payload.websiteUrl !== null)
         formData.append("websiteUrl", payload.websiteUrl);
+    if (payload.pdf) formData.append("pdf", payload.pdf);
+    if (payload.pdfUrl !== undefined) formData.append("pdfUrl", payload.pdfUrl);
+    if ("removePdf" in payload && payload.removePdf !== undefined)
+        formData.append("removePdf", String(payload.removePdf));
     if (payload.order !== undefined) formData.append("order", String(payload.order));
     if (payload.isActive !== undefined)
         formData.append("isActive", String(payload.isActive));

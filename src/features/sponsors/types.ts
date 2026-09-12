@@ -20,6 +20,8 @@ export interface CreateSponsorPayload {
     logo?: File | null;
     logoUrl?: string;
     websiteUrl?: string;
+    pdf?: File | null;
+    pdfUrl?: string;
     order?: number;
     isActive?: boolean;
 }
@@ -30,6 +32,9 @@ export interface UpdateSponsorPayload {
     logo?: File | null;
     logoUrl?: string;
     websiteUrl?: string | null;
+    pdf?: File | null;
+    pdfUrl?: string;
+    removePdf?: boolean;
     order?: number;
     isActive?: boolean;
 }

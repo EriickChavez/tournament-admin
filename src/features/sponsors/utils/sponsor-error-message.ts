@@ -19,8 +19,8 @@ export function getSponsorErrorMessage(error: unknown): string {
                 return "El tipo de archivo no es válido";
             case "FILE_TOO_LARGE":
                 return "El archivo excede el tamaño máximo permitido";
-            case "NOT_TOURNAMENT_ADMIN":
-                return "No tienes permisos para gestionar sponsors en este torneo";
+            case "NOT_TOURNAMENT_OWNER":
+                return "Solo el dueño (OWNER) del torneo puede gestionar sponsors";
             case "TOURNAMENT_NOT_FOUND":
                 return "El torneo no fue encontrado";
             case "TOURNAMENT_SPONSOR_NOT_FOUND":
