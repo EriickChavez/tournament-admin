@@ -46,6 +46,28 @@ function formatDisplayDate(dateStr?: string | null): string {
   }
 }
 
+/** Días que faltan para endDate, comparando por día calendario (sin horas). */
+function getDaysRemaining(endDate?: string | null): number | null {
+  if (!endDate) return null;
+
+  const [year, month, day] = endDate.split("T")[0].split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const end = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const diffMs = end.getTime() - today.getTime();
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function formatDaysRemaining(days: number | null): string {
+  if (days === null) return "—";
+  if (days < 0) return "Finalizado";
+  if (days === 0) return "Hoy";
+  return String(days);
+}
+
 export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
   const navigate = useNavigate();
   const deleteTournament = useDeleteTournament();
@@ -101,9 +123,21 @@ export function TournamentList({ tournaments }: { tournaments: Tournament[] }) {
 
               {/* Stats */}
               <div className="flex flex-wrap items-center gap-5 border-t border-gray-100 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                <StatColumn label="Jugadores" value="—" />
-                <StatColumn label="Equipos" value="—" />
-                <StatColumn label="Días rest." value="—" accent />
+                <StatColumn
+                  label="Jugadores"
+                  value={tournament.playerCount ?? "—"}
+                />
+                <StatColumn
+                  label="Equipos"
+                  value={tournament.teamCount ?? "—"}
+                />
+                <StatColumn
+                  label="Días rest."
+                  value={formatDaysRemaining(
+                    getDaysRemaining(tournament.endDate),
+                  )}
+                  accent
+                />
 
                 <button
                   type="button"

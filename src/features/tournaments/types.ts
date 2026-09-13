@@ -12,6 +12,10 @@ export interface Tournament {
     timezone?: string;
     maxSponsors?: number;
     branding?: TournamentBranding | null;
+    /** Solo viene en GET /tournaments (listado); el detalle no lo trae. */
+    playerCount?: number;
+    /** Solo viene en GET /tournaments (listado); el detalle no lo trae. */
+    teamCount?: number;
 }
 
 export interface CreateTournamentPayload {
