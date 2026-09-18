@@ -240,14 +240,15 @@ export function SponsorsSection({
         </div>
       )}
 
-      <SponsorFormModal
-        isOpen={modalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmitForm}
-        sponsor={editingSponsor}
-        isSubmitting={createSponsor.isPending || updateSponsor.isPending}
-        errorMessage={modalError}
-      />
+      {modalOpen && (
+        <SponsorFormModal
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitForm}
+          sponsor={editingSponsor}
+          isSubmitting={createSponsor.isPending || updateSponsor.isPending}
+          errorMessage={modalError}
+        />
+      )}
     </div>
   );
 }

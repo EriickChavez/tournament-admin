@@ -63,6 +63,7 @@ export function MatchFormModal({
     handleSubmit,
     reset,
     watch,
+    getValues,
     setValue,
     formState: { errors },
   } = useForm<MatchFormValues, unknown, MatchFormOutput>({
@@ -109,17 +110,20 @@ export function MatchFormModal({
     }
   }, [isOpen, match, categories, reset]);
 
+  // getValues (no watch): aquí solo necesitamos leer el valor actual una vez,
+  // no suscribirnos a cambios. watch() dentro de un effect puede devolver un
+  // valor desactualizado y además rompe la memoización del React Compiler.
   useEffect(() => {
     if (!isOpen) return;
-    const currentHome = watch("homeTeamId");
-    const currentAway = watch("awayTeamId");
+    const currentHome = getValues("homeTeamId");
+    const currentAway = getValues("awayTeamId");
     if (!teamsInCategory.some((t) => t.id === currentHome)) {
       setValue("homeTeamId", "");
     }
     if (!teamsInCategory.some((t) => t.id === currentAway)) {
       setValue("awayTeamId", "");
     }
-  }, [selectedCategoryId, teamsInCategory, isOpen, setValue, watch]);
+  }, [selectedCategoryId, teamsInCategory, isOpen, setValue, getValues]);
 
   if (!isOpen) return null;
 

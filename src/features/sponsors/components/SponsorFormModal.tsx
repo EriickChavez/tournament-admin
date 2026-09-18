@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -43,8 +43,10 @@ export interface SponsorSubmitValues extends SponsorFormOutput {
   removePdf?: boolean;
 }
 
+// El modal se monta solo cuando está abierto (ver SponsorsSection), por eso no
+// recibe isOpen ni necesita un effect para resetearse: el estado inicial se
+// deriva de las props y se descarta al desmontar.
 interface SponsorFormModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSubmit: (values: SponsorSubmitValues) => void;
   sponsor?: TournamentSponsor | null;
@@ -53,7 +55,6 @@ interface SponsorFormModalProps {
 }
 
 export function SponsorFormModal({
-  isOpen,
   onClose,
   onSubmit,
   sponsor,
@@ -64,7 +65,9 @@ export function SponsorFormModal({
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
 
-  const [pdfMode, setPdfMode] = useState<PdfMode>("none");
+  const [pdfMode, setPdfMode] = useState<PdfMode>(
+    sponsor?.pdfUrl ? "keep" : "none",
+  );
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrlText, setPdfUrlText] = useState("");
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -73,47 +76,17 @@ export function SponsorFormModal({
     control,
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<SponsorFormValues, unknown, SponsorFormOutput>({
     resolver: zodResolver(sponsorFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      websiteUrl: "",
-      order: "0",
-      isActive: true,
+      name: sponsor?.name ?? "",
+      description: sponsor?.description ?? "",
+      websiteUrl: sponsor?.websiteUrl ?? "",
+      order: String(sponsor?.order ?? 0),
+      isActive: sponsor?.isActive ?? true,
     },
   });
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setLogoFile(null);
-    setLogoError(null);
-    setPdfFile(null);
-    setPdfUrlText("");
-    setPdfError(null);
-    setPdfMode(sponsor?.pdfUrl ? "keep" : "none");
-    if (sponsor) {
-      reset({
-        name: sponsor.name,
-        description: sponsor.description,
-        websiteUrl: sponsor.websiteUrl ?? "",
-        order: String(sponsor.order ?? 0),
-        isActive: sponsor.isActive,
-      });
-    } else {
-      reset({
-        name: "",
-        description: "",
-        websiteUrl: "",
-        order: "0",
-        isActive: true,
-      });
-    }
-  }, [isOpen, sponsor, reset]);
-
-  if (!isOpen) return null;
 
   function handleLogoChange(file: File | null) {
     if (!file) {

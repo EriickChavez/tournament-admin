@@ -15,6 +15,7 @@ export function getTeamErrorMessage(error: unknown): string {
                 return "La categoría no es válida para este torneo";
             case "TEAM_NOT_FOUND":
                 return "El equipo ya no existe";
+            case "TEAM_NAME_ALREADY_IN_USE":
             case "TEAM_NAME_ALREADY_EXISTS":
             case "DUPLICATE_TEAM_NAME":
                 return "Ya existe un equipo con ese nombre en el torneo";

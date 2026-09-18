@@ -2,13 +2,11 @@ import type { Member } from "../types";
 
 export function MemberItem({
   member,
-  onChangeRole,
   onRemove,
   isChangingRole,
   isRemoving,
 }: {
   member: Member;
-  onChangeRole: () => void;
   onRemove: () => void;
   isChangingRole: boolean;
   isRemoving: boolean;

@@ -13,6 +13,8 @@ export function getSponsorErrorMessage(error: unknown): string {
                 return "Sube un logo o pon una URL, no ambos";
             case "AMBIGUOUS_PDF_INPUT":
                 return "Sube un PDF o pon una URL, no ambos";
+            case "WEBSITE_AND_PDF_CONFLICT":
+                return "Un sponsor no puede tener sitio web y PDF al mismo tiempo";
             case "INVALID_DATE_RANGE":
                 return "La fecha de fin debe ser igual o posterior a la de inicio";
             case "INVALID_FILE_TYPE":

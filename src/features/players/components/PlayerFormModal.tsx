@@ -54,6 +54,7 @@ export function PlayerFormModal({
     handleSubmit,
     reset,
     watch,
+    getValues,
     setValue,
     control,
     formState: { errors },
@@ -107,14 +108,17 @@ export function PlayerFormModal({
     }
   }, [isOpen, player, categories, teams, reset]);
 
+  // getValues (no watch): aquí solo necesitamos leer el valor actual una vez,
+  // no suscribirnos a cambios. watch() dentro de un effect puede devolver un
+  // valor desactualizado y además rompe la memoización del React Compiler.
   useEffect(() => {
     if (!isOpen) return;
-    const currentTeamId = watch("teamId");
+    const currentTeamId = getValues("teamId");
     const stillValid = teamsInCategory.some((t) => t.id === currentTeamId);
     if (!stillValid) {
       setValue("teamId", teamsInCategory[0]?.id ?? "");
     }
-  }, [selectedCategoryId, teamsInCategory, isOpen, setValue, watch]);
+  }, [selectedCategoryId, teamsInCategory, isOpen, setValue, getValues]);
 
   if (!isOpen) return null;
 

@@ -38,7 +38,6 @@ export function MembersSection({ tournamentId }: { tournamentId: string }) {
             <MemberItem
               key={member.id}
               member={member}
-              onChangeRole={() => {}}
               onRemove={() => removeMember.mutate(member.id)}
               isChangingRole={false}
               isRemoving={
