@@ -15,12 +15,16 @@ export function getMemberErrorMessage(error: unknown): string {
                 return "No encontramos a ese usuario";
             case "USER_NOT_FOUND":
                 return "No existe ninguna cuenta con ese correo";
+            case "EMAIL_ALREADY_IN_USE":
+                return "Ya existe una cuenta con ese correo. Usa \"Invitar existente\" en vez de crear una nueva.";
             case "MEMBER_NOT_FOUND":
                 return "Ese miembro ya no existe";
             case "CANNOT_MODIFY_OWNER":
                 return "No puedes modificar ni quitar al dueño del torneo";
             case "TOURNAMENT_NOT_FOUND":
                 return "El torneo no fue encontrado";
+            case "VALIDATION_ERROR":
+                return error.message || "Revisa los datos del formulario";
             default:
                 return error.message || "Ocurrió un error al gestionar miembros";
         }

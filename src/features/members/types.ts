@@ -10,3 +10,9 @@ export interface Member {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface CreateMemberAccountPayload {
+    email: string;
+    displayName: string;
+    password: string;
+}
