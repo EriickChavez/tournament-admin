@@ -5,6 +5,7 @@ import { EditTournamentForm } from "../features/tournaments/components/EditTourn
 import { CategoriesSection } from "../features/categories/components/CategoriesSection";
 import { TeamsSection } from "../features/teams/components/TeamsSection";
 import { PlayersSection } from "../features/players/components/PlayersSection";
+import { ImportSection } from "../features/imports/components/ImportSection";
 import { MatchesSection } from "../features/matches/components/MatchesSection";
 import { MembersSection } from "../features/members/components/MembersSection";
 import { BrandingSection } from "../features/branding/components/BrandingSection";
@@ -33,6 +34,7 @@ type TabId =
   | "sponsors"
   | "teams"
   | "players"
+  | "import"
   | "matches"
   | "members";
 
@@ -43,6 +45,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "sponsors", label: "Sponsors" },
   { id: "teams", label: "Equipos" },
   { id: "players", label: "Jugadores" },
+  { id: "import", label: "Importar" },
   { id: "matches", label: "Partidos" },
   { id: "members", label: "Miembros" },
 ];
@@ -168,6 +171,12 @@ export function EditTournamentPage() {
         {activeTab === "players" && (
           <div className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
             <PlayersSection tournamentId={tournament.id} />
+          </div>
+        )}
+
+        {activeTab === "import" && (
+          <div className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
+            <ImportSection tournamentId={tournament.id} />
           </div>
         )}
 
