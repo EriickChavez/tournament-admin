@@ -11,6 +11,11 @@ export const teamsApi = {
             `/tournaments/${tournamentId}/teams?page=${pagination.page}&limit=${pagination.limit}`,
         ),
 
+    listByCategory: (tournamentId: string, categoryId: string) =>
+        httpClient.get<{ teams: Team[]; pagination: PaginationMeta }>(
+            `/tournaments/${tournamentId}/teams?categoryId=${categoryId}&page=1&limit=100`,
+        ),
+
     create: (tournamentId: string, payload: CreateTeamPayload) =>
         httpClient.post<{ team: Team }>(`/tournaments/${tournamentId}/teams`, payload),
 

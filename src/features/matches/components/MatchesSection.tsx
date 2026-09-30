@@ -3,6 +3,7 @@ import { useMatches } from "../hooks/use-matches";
 import { useCreateMatch } from "../hooks/use-create-match";
 import { useUpdateMatch } from "../hooks/use-update-match";
 import { useDeleteMatch } from "../hooks/use-delete-match";
+import { useMatchGroupNames } from "../hooks/use-match-group-names";
 import { useCategories } from "../../categories/hooks/use-categories";
 import { useTeams } from "../../teams/hooks/use-teams";
 import { MatchItem } from "./MatchItem";
@@ -55,6 +56,11 @@ const STATUS_FILTER_OPTIONS: { value: MatchStatus | ""; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
   { value: "postponed", label: "Pospuesto" },
 ];
+
+// Si el grupo se llama "A", se muestra "Grupo A"; si ya dice "Grupo A", se deja igual.
+function toGroupLabel(name: string): string {
+  return /^grupo\b/i.test(name) ? name : `Grupo ${name}`;
+}
 
 interface MatchesSectionProps {
   tournamentId: string;
@@ -115,6 +121,9 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
   const matches = matchesData?.matches ?? [];
   const categories = categoriesData?.categories ?? [];
   const teams = teamsData?.teams ?? [];
+
+  // Nombres de grupo de las fases que aparecen en la página actual.
+  const groupNameById = useMatchGroupNames(matches);
 
   const categoryTitleById = new Map(
     categories.map((c) => [c.id, c.title] as const),
@@ -323,24 +332,31 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
 
       {!isLoading && !isError && matches.length > 0 && (
         <div className="flex flex-col gap-2.5">
-          {matches.map((match) => (
-            <MatchItem
-              key={match.id}
-              match={match}
-              homeTeamName={
-                match.homeTeam?.name ?? teamNameById.get(match.homeTeamId)
-              }
-              awayTeamName={
-                match.awayTeam?.name ?? teamNameById.get(match.awayTeamId)
-              }
-              categoryTitle={
-                match.category?.title ?? categoryTitleById.get(match.categoryId)
-              }
-              onEdit={handleOpenEdit}
-              onDelete={handleDeleteMatch}
-              isDeleting={deleteMatch.isPending}
-            />
-          ))}
+          {matches.map((match) => {
+            const groupName = match.phaseGroupId
+              ? groupNameById.get(match.phaseGroupId)
+              : undefined;
+            return (
+              <MatchItem
+                key={match.id}
+                match={match}
+                homeTeamName={
+                  match.homeTeam?.name ?? teamNameById.get(match.homeTeamId)
+                }
+                awayTeamName={
+                  match.awayTeam?.name ?? teamNameById.get(match.awayTeamId)
+                }
+                categoryTitle={
+                  match.category?.title ??
+                  categoryTitleById.get(match.categoryId)
+                }
+                {...(groupName ? { groupName: toGroupLabel(groupName) } : {})}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteMatch}
+                isDeleting={deleteMatch.isPending}
+              />
+            );
+          })}
         </div>
       )}
 

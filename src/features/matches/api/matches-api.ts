@@ -13,6 +13,7 @@ import type {
 export interface ListMatchesFilters {
     categoryId?: string | undefined;
     status?: MatchStatus | undefined;
+    phaseId?: string | undefined;
 }
 
 export const matchesApi = {
@@ -27,6 +28,7 @@ export const matchesApi = {
         });
         if (filters?.categoryId) params.set("categoryId", filters.categoryId);
         if (filters?.status) params.set("status", filters.status);
+        if (filters?.phaseId) params.set("phaseId", filters.phaseId);
 
         return httpClient.get<{ matches: Match[]; pagination: PaginationMeta }>(
             `/tournaments/${tournamentId}/matches?${params.toString()}`,

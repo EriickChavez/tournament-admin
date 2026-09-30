@@ -26,6 +26,9 @@ export interface Match {
     scheduledAt: string;
     venue: string | null;
     status: MatchStatus;
+    phaseId?: string | null;
+    phaseGroupId?: string | null;
+    round?: number | null;
     /** Presente en list/get (respuesta enriquecida del backend). */
     homeTeam?: MatchTeamSummary;
     awayTeam?: MatchTeamSummary;
@@ -39,6 +42,9 @@ export interface CreateMatchPayload {
     scheduledAt: string;
     venue?: string;
     status?: MatchStatus;
+    phaseId?: string | null;
+    phaseGroupId?: string | null;
+    round?: number | null;
 }
 
 export type UpdateMatchPayload = Partial<{

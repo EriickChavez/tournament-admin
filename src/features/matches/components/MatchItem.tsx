@@ -80,6 +80,7 @@ interface MatchItemProps {
   homeTeamName?: string;
   awayTeamName?: string;
   categoryTitle?: string;
+  groupName?: string;
   onEdit: (match: Match) => void;
   onDelete: (match: Match) => void;
   isDeleting: boolean;
@@ -90,6 +91,7 @@ export function MatchItem({
   homeTeamName,
   awayTeamName,
   categoryTitle,
+  groupName,
   onEdit,
   onDelete,
   isDeleting,
@@ -118,11 +120,17 @@ export function MatchItem({
               {categoryTitle}
             </span>
           )}
+          {groupName && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-600 text-[11px] font-semibold">
+              {groupName}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <CalendarIcon /> {formattedDate}
           </span>
+          {match.round != null && <span>Jornada {match.round}</span>}
           {match.venue && (
             <span className="flex items-center gap-1">
               <MapPinIcon /> {match.venue}

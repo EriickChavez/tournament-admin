@@ -8,7 +8,10 @@ export function useSyncPhaseTeams(phaseId: string) {
     return useMutation({
         mutationFn: (payload: SyncPhaseTeamsPayload) =>
             phasesApi.syncTeams(phaseId, payload),
-        onSuccess: () => {
+        onSuccess: (result) => {
+            queryClient.setQueryData(["phases", phaseId, "teams"], {
+                teams: result.teams,
+            });
             queryClient.invalidateQueries({
                 queryKey: ["phases", phaseId, "teams"],
             });

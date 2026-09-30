@@ -8,6 +8,7 @@ import { PersonalizacionPage } from "../features/personalizacion/Personalizacion
 import { CreateTournamentPage } from "../pages/CreateTournamentPage";
 import { EditTournamentPage } from "../pages/EditTournamentPage";
 import { PhasesPage } from "../pages/PhasesPage";
+import { PhaseDetailPage } from "../features/phases/components/PhaseDetailPage";
 
 export function AppRouter() {
   return (
@@ -28,6 +29,10 @@ export function AppRouter() {
           <Route
             path="/torneos/:tournamentId/categorias/:categoryId/fases"
             element={<PhasesPage />}
+          />
+          <Route
+            path="/torneos/:tournamentId/categorias/:categoryId/fases/:phaseId"
+            element={<PhaseDetailPage />}
           />
         </Route>
       </Route>
