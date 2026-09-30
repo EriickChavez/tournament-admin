@@ -94,7 +94,7 @@ export function CategoriesSection({ tournamentId }: CategoriesSectionProps) {
         {
           onSuccess: () => handleCloseModal(),
           onError: (err) => setModalError(getCategoryErrorMessage(err)),
-        }
+        },
       );
     } else {
       createCategory.mutate(payload, {
@@ -106,7 +106,7 @@ export function CategoriesSection({ tournamentId }: CategoriesSectionProps) {
 
   function handleDeleteCategory(category: Category) {
     const isConfirm = window.confirm(
-      `¿Estás seguro de que deseas eliminar la categoría "${category.title}"?`
+      `¿Estás seguro de que deseas eliminar la categoría "${category.title}"?`,
     );
     if (!isConfirm) return;
 
@@ -171,7 +171,9 @@ export function CategoriesSection({ tournamentId }: CategoriesSectionProps) {
       {/* Error State */}
       {isError && (
         <div className="rounded-xl bg-red-50 border border-red-100 p-4 flex flex-col items-start gap-2">
-          <p className="text-xs text-red-600">{getCategoryErrorMessage(error)}</p>
+          <p className="text-xs text-red-600">
+            {getCategoryErrorMessage(error)}
+          </p>
           <button
             type="button"
             onClick={() => refetch()}
@@ -210,6 +212,7 @@ export function CategoriesSection({ tournamentId }: CategoriesSectionProps) {
         <div className="flex flex-col gap-2.5">
           {categories.map((cat) => (
             <CategoryItem
+              tournamentId={tournamentId}
               key={cat.id}
               category={cat}
               onEdit={handleOpenEdit}

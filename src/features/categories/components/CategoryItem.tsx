@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import type { Category } from "../types";
 
 const EditIcon = () => (
@@ -32,7 +33,25 @@ const TrashIcon = () => (
   </svg>
 );
 
+const LayersIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+    <polyline points="2 17 12 22 22 17" />
+    <polyline points="2 12 12 17 22 12" />
+  </svg>
+);
+
 interface CategoryItemProps {
+  tournamentId: string;
   category: Category;
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
@@ -40,11 +59,14 @@ interface CategoryItemProps {
 }
 
 export function CategoryItem({
+  tournamentId,
   category,
   onEdit,
   onDelete,
   isDeleting,
 }: CategoryItemProps) {
+  const navigate = useNavigate();
+
   function renderAgeBadge() {
     if (category.minAge !== null && category.maxAge !== null) {
       return `${category.minAge} - ${category.maxAge} años`;
@@ -84,8 +106,18 @@ export function CategoryItem({
         )}
       </div>
 
-      {/* Action buttons */}
       <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        <button
+          type="button"
+          onClick={() =>
+            navigate(`/torneos/${tournamentId}/categorias/${category.id}/fases`)
+          }
+          className="min-h-8 px-3 rounded-lg border border-primary/30 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-1.5"
+          title="Ver fases"
+        >
+          <LayersIcon />
+          Fases
+        </button>
         <button
           type="button"
           onClick={() => onEdit(category)}
