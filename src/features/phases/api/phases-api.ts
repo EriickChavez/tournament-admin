@@ -3,6 +3,7 @@ import type {
     Phase,
     PhaseGroup,
     PhaseTeam,
+    PhaseStandingsResponse,
     CreatePhasePayload,
     UpdatePhasePayload,
     CreatePhaseGroupPayload,
@@ -58,4 +59,17 @@ export const phasesApi = {
             `/phases/${phaseId}/teams`,
             payload,
         ),
+
+    getStandings: (
+        phaseId: string,
+        params: { perGroup: number; bestNext: number },
+    ) => {
+        const query = new URLSearchParams({
+            perGroup: String(params.perGroup),
+            bestNext: String(params.bestNext),
+        });
+        return httpClient.get<PhaseStandingsResponse>(
+            `/phases/${phaseId}/standings?${query.toString()}`,
+        );
+    },
 };

@@ -7,6 +7,8 @@ import { PHASE_TYPE_LABELS } from "../types";
 import { getPhaseErrorMessage } from "../utils/phase-error-message";
 import { PhaseFixturesPanel } from "./PhaseFixturesPanel";
 import { PhaseGroupsPanel } from "./PhaseGroupsPanel";
+import { PhaseResultsPanel } from "./PhaseResultsPanel";
+import { PhaseStandingsPanel } from "./PhaseStandingsPanel";
 import { PhaseTeamsPanel } from "./PhaseTeamsPanel";
 
 const ArrowLeftIcon = () => (
@@ -124,6 +126,18 @@ export function PhaseDetailPage() {
             groups={groups}
             teams={teams}
             assignments={assignments}
+          />
+        )}
+        <PhaseResultsPanel
+          tournamentId={tournamentId}
+          phase={phase}
+          groups={groups}
+        />
+        {isGroupPhase && (
+          <PhaseStandingsPanel
+            tournamentId={tournamentId}
+            phaseId={phase.id}
+            teams={teams}
           />
         )}
       </div>
