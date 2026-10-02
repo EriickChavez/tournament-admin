@@ -4,6 +4,10 @@ import type {
     PhaseGroup,
     PhaseTeam,
     PhaseStandingsResponse,
+    PhaseClosure,
+    ClosePhasePayload,
+    ManualRank,
+    SetManualRanksPayload,
     CreatePhasePayload,
     UpdatePhasePayload,
     CreatePhaseGroupPayload,
@@ -72,4 +76,20 @@ export const phasesApi = {
             `/phases/${phaseId}/standings?${query.toString()}`,
         );
     },
+
+    // Reemplaza todas las decisiones manuales de un tipo (group o best_next).
+    setManualRanks: (phaseId: string, payload: SetManualRanksPayload) =>
+        httpClient.put<{ manualRanks: ManualRank[] }>(
+            `/phases/${phaseId}/standings/manual-ranks`,
+            payload,
+        ),
+
+    closePhase: (phaseId: string, payload: ClosePhasePayload) =>
+        httpClient.post<{ phase: Phase; closure: PhaseClosure }>(
+            `/phases/${phaseId}/close`,
+            payload,
+        ),
+
+    reopenPhase: (phaseId: string) =>
+        httpClient.post<{ phase: Phase }>(`/phases/${phaseId}/reopen`, {}),
 };

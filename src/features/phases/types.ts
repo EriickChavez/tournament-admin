@@ -78,6 +78,8 @@ export interface StandingRow {
     points: number;
     /** Equipos con el mismo valor siguen empatados tras los desempates automáticos. */
     tieGroup: number | null;
+    /** true si el orden de este equipo lo decidió el admin. */
+    resolvedManually: boolean;
 }
 
 export interface GroupStandings {
@@ -121,11 +123,52 @@ export interface PhaseProgress {
     isComplete: boolean;
 }
 
+export type ManualRankScope = "group" | "best_next";
+
+export interface ManualRank {
+    teamId: string;
+    scope: ManualRankScope;
+    rank: number;
+}
+
+export interface SetManualRanksPayload {
+    scope: ManualRankScope;
+    ranks: { teamId: string; rank: number }[];
+}
+
+// ---- Cierre de fase ----
+
+export interface ClosedQualifiedTeam {
+    teamId: string;
+    groupId: string | null;
+    position: number;
+    via: "group" | "best_next";
+    points: number;
+    goalDifference: number;
+    goalsFor: number;
+}
+
+/** Foto de los clasificados guardada al cerrar la fase. */
+export interface PhaseClosure {
+    qualifiersPerGroup: number;
+    bestNextCount: number;
+    closedAt: string;
+    qualified: ClosedQualifiedTeam[];
+}
+
+export interface ClosePhasePayload {
+    perGroup: number;
+    bestNext: number;
+}
+
 export interface PhaseStandingsResponse {
     phase: Phase;
     progress: PhaseProgress;
     groups: GroupStandings[];
     qualification: Qualification | null;
+    manualRanks: ManualRank[];
+    /** null si la fase sigue abierta. */
+    closure: PhaseClosure | null;
 }
 
 export const PHASE_TYPE_LABELS: Record<PhaseType, string> = {

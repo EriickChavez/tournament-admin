@@ -26,6 +26,22 @@ export function getPhaseErrorMessage(error: unknown): string {
                 return "Un equipo solo puede asignarse una vez por fase";
             case "PHASE_HAS_MATCHES":
                 return "No se puede eliminar una fase que todavía tiene partidos";
+            case "STANDINGS_NOT_AVAILABLE":
+                return "Las posiciones por grupo solo existen en fases de tipo grupos";
+            case "TEAM_NOT_IN_PHASE":
+                return "Uno o más equipos no forman parte de esta fase";
+            case "DUPLICATE_MANUAL_RANK":
+                return "Cada equipo debe tener una posición distinta dentro de su empate";
+            case "PHASE_ALREADY_CLOSED":
+                return "La fase ya está cerrada";
+            case "PHASE_NOT_CLOSED":
+                return "La fase no está cerrada";
+            case "PHASE_NOT_COMPLETE":
+                return `No se puede cerrar: faltan partidos por terminar. ${error.message}`;
+            case "PHASE_HAS_PENDING_TIES":
+                return "No se puede cerrar: hay empates sin resolver que afectan quién clasifica";
+            case "INVALID_QUALIFICATION_CONFIG":
+                return `Configuración de clasificación inválida: ${error.message}`;
             case "VALIDATION_ERROR":
                 return error.message || "Revisa los datos del formulario";
             default:
