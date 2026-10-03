@@ -31,6 +31,8 @@ export interface Match {
     round?: number | null;
     homeScore?: number | null;
     awayScore?: number | null;
+    homePenalties?: number | null;
+    awayPenalties?: number | null;
     /** Presente en list/get (respuesta enriquecida del backend). */
     homeTeam?: MatchTeamSummary;
     awayTeam?: MatchTeamSummary;
@@ -59,6 +61,9 @@ export type UpdateMatchPayload = Partial<{
     // El backend exige mandar los dos juntos (o ambos null para borrar el marcador).
     homeScore: number | null;
     awayScore: number | null;
+    // Solo con marcador empatado; también juntos (o ambos null).
+    homePenalties: number | null;
+    awayPenalties: number | null;
 }>;
 
 export const MATCH_STATUS_LABELS: Record<MatchStatus, string> = {

@@ -1,4 +1,5 @@
 import { useNavigate, useParams, Navigate } from "react-router";
+import { BracketPanel } from "../../brackets/components/BracketPanel";
 import { useCategoryTeams } from "../../teams/hooks/use-category-teams";
 import { usePhase } from "../hooks/use-phase";
 import { usePhaseGroups } from "../hooks/use-phase-groups";
@@ -86,6 +87,7 @@ export function PhaseDetailPage() {
   const teams = teamsQuery.data?.teams ?? [];
   const assignments = phaseTeamsQuery.data?.teams ?? [];
   const isGroupPhase = phase.type === "group";
+  const isKnockoutPhase = phase.type === "knockout";
 
   return (
     <div className="w-full">
@@ -108,39 +110,50 @@ export function PhaseDetailPage() {
         </p>
       </div>
 
-      <div className="space-y-6">
-        {isGroupPhase && (
-          <PhaseGroupsPanel phaseId={phase.id} groups={groups} />
-        )}
-        <PhaseTeamsPanel
+      {isKnockoutPhase ? (
+        // En una eliminatoria los equipos vienen de la fase de grupos y los resultados se
+        // capturan en cada cruce, así que solo se muestra la llave.
+        <BracketPanel
+          tournamentId={tournamentId}
+          categoryId={categoryId}
           phase={phase}
-          groups={groups}
           teams={teams}
-          assignments={assignments}
         />
-        {isGroupPhase && (
-          <PhaseFixturesPanel
-            tournamentId={tournamentId}
-            categoryId={categoryId}
+      ) : (
+        <div className="space-y-6">
+          {isGroupPhase && (
+            <PhaseGroupsPanel phaseId={phase.id} groups={groups} />
+          )}
+          <PhaseTeamsPanel
             phase={phase}
             groups={groups}
             teams={teams}
             assignments={assignments}
           />
-        )}
-        <PhaseResultsPanel
-          tournamentId={tournamentId}
-          phase={phase}
-          groups={groups}
-        />
-        {isGroupPhase && (
-          <PhaseStandingsPanel
+          {isGroupPhase && (
+            <PhaseFixturesPanel
+              tournamentId={tournamentId}
+              categoryId={categoryId}
+              phase={phase}
+              groups={groups}
+              teams={teams}
+              assignments={assignments}
+            />
+          )}
+          <PhaseResultsPanel
             tournamentId={tournamentId}
-            phaseId={phase.id}
-            teams={teams}
+            phase={phase}
+            groups={groups}
           />
-        )}
-      </div>
+          {isGroupPhase && (
+            <PhaseStandingsPanel
+              tournamentId={tournamentId}
+              phaseId={phase.id}
+              teams={teams}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
