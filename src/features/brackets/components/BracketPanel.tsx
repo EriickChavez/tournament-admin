@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useBracket } from "../hooks/use-bracket";
 import { useGenerateBracket } from "../hooks/use-generate-bracket";
+import { useDeleteBracket } from "../hooks/use-delete-bracket";
 import { usePhases } from "../../phases/hooks/use-phases";
 import { useMatches } from "../../matches/hooks/use-matches";
 import { BracketNodeCard } from "./BracketNodeCard";
@@ -46,6 +47,8 @@ function GenerateForm({
 
   const [sourceId, setSourceId] = useState("");
   const [thirdPlace, setThirdPlace] = useState(true);
+  const [twoLegged, setTwoLegged] = useState(false);
+  const [singleLegFinal, setSingleLegFinal] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Solo fases de grupos de esta categoría; las cerradas son las que se pueden usar.
@@ -66,7 +69,13 @@ function GenerateForm({
     }
     setError(null);
     generate.mutate(
-      { sourcePhaseId: selected, thirdPlace },
+      {
+        sourcePhaseId: selected,
+        thirdPlace,
+        twoLegged,
+        // Solo tiene sentido con ida y vuelta.
+        ...(twoLegged ? { singleLegFinal } : {}),
+      },
       { onError: (err) => setError(getBracketErrorMessage(err)) },
     );
   }
@@ -87,47 +96,77 @@ function GenerateForm({
           Esta categoría no tiene una fase de grupos.
         </p>
       ) : (
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="flex flex-col gap-1 text-xs text-gray-500">
-            Fase de grupos de origen
-            <select
-              value={selected}
-              onChange={(e) => setSourceId(e.target.value)}
-              className="min-h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-800 outline-none focus:border-primary"
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="flex flex-col gap-1 text-xs text-gray-500">
+              Fase de grupos de origen
+              <select
+                value={selected}
+                onChange={(e) => setSourceId(e.target.value)}
+                className="min-h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-800 outline-none focus:border-primary"
+              >
+                {!firstClosed && <option value="">Sin fases cerradas</option>}
+                {sources.map((p) => (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                    disabled={p.status !== "finished"}
+                  >
+                    {p.name}
+                    {p.status !== "finished" ? " (sin cerrar)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={!selected || generate.isPending}
+              className="min-h-9 rounded-xl bg-primary px-4 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
-              {!firstClosed && <option value="">Sin fases cerradas</option>}
-              {sources.map((p) => (
-                <option
-                  key={p.id}
-                  value={p.id}
-                  disabled={p.status !== "finished"}
-                >
-                  {p.name}
-                  {p.status !== "finished" ? " (sin cerrar)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={thirdPlace}
-              onChange={(e) => setThirdPlace(e.target.checked)}
-            />
-            Partido por el tercer lugar
-          </label>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={!selected || generate.isPending}
-            className="min-h-9 rounded-xl bg-primary px-4 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {generate.isPending
-              ? "Generando..."
-              : hasBracket
-                ? "Regenerar llave"
-                : "Generar llave"}
-          </button>
+              {generate.isPending
+                ? "Generando..."
+                : hasBracket
+                  ? "Regenerar llave"
+                  : "Generar llave"}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={thirdPlace}
+                onChange={(e) => setThirdPlace(e.target.checked)}
+              />
+              Partido por el tercer lugar
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={twoLegged}
+                onChange={(e) => setTwoLegged(e.target.checked)}
+              />
+              Cruces a ida y vuelta
+            </label>
+            {twoLegged && (
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={singleLegFinal}
+                  onChange={(e) => setSingleLegFinal(e.target.checked)}
+                />
+                Final a partido único
+              </label>
+            )}
+          </div>
+          {twoLegged && (
+            <p className="text-xs text-gray-500">
+              Gana el marcador global; si empata, se define por penales (sin gol
+              de visitante). El repechaje y el tercer lugar siguen siendo a
+              partido único.
+            </p>
+          )}
         </div>
       )}
 
@@ -149,6 +188,8 @@ export function BracketPanel({
 }: BracketPanelProps) {
   const bracketQuery = useBracket(tournamentId, phase.id);
   const matchesQuery = useMatches(tournamentId, 1, 100, { phaseId: phase.id });
+  const deleteBracket = useDeleteBracket(tournamentId, phase.id);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const nodes = useMemo(
     () => bracketQuery.data?.nodes ?? [],
@@ -193,7 +234,10 @@ export function BracketPanel({
     return result;
   }, [nodes, roundSizes]);
 
-  const started = nodes.some((n) => n.matchId !== null);
+  // Regenerar o eliminar solo se ofrece mientras ningún cruce tenga partidos (ida o vuelta).
+  const started = nodes.some(
+    (n) => n.matchId !== null || n.secondLegMatchId !== null,
+  );
 
   const finalNode = nodes
     .filter((n) => n.stage === "main")
@@ -202,6 +246,20 @@ export function BracketPanel({
     finalNode?.winnerTeamId && columns.length > 0
       ? teamName(finalNode.winnerTeamId)
       : null;
+
+  function handleDelete() {
+    if (
+      !window.confirm(
+        "Se eliminará la llave. Podrás generarla de nuevo cuando quieras. ¿Continuar?",
+      )
+    ) {
+      return;
+    }
+    setDeleteError(null);
+    deleteBracket.mutate(undefined, {
+      onError: (err) => setDeleteError(getBracketErrorMessage(err)),
+    });
+  }
 
   if (bracketQuery.isLoading) {
     return (
@@ -250,7 +308,7 @@ export function BracketPanel({
           <div className="overflow-x-auto pb-2">
             <div className="flex min-w-max gap-4">
               {columns.map((column) => (
-                <div key={column.key} className="w-64 shrink-0">
+                <div key={column.key} className="w-72 shrink-0">
                   <h3 className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {column.title}
                   </h3>
@@ -273,8 +331,13 @@ export function BracketPanel({
                           roundSizes,
                         )}
                         teamName={teamName}
-                        match={
+                        firstMatch={
                           node.matchId ? matchById.get(node.matchId) : undefined
+                        }
+                        secondMatch={
+                          node.secondLegMatchId
+                            ? matchById.get(node.secondLegMatchId)
+                            : undefined
                         }
                       />
                     ))}
@@ -285,13 +348,36 @@ export function BracketPanel({
           </div>
 
           {!started && (
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
               <GenerateForm
                 tournamentId={tournamentId}
                 categoryId={categoryId}
                 phase={phase}
                 hasBracket
               />
+
+              <div className="flex flex-col gap-2 rounded-xl border border-red-100 bg-red-50/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-red-800">
+                    Eliminar llave
+                  </h3>
+                  <p className="text-xs text-red-700/80">
+                    Hazlo si necesitas reabrir la fase de grupos: mientras
+                    exista la llave, esa fase no se puede reabrir.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteBracket.isPending}
+                  className="min-h-9 shrink-0 rounded-xl border border-red-200 bg-white px-4 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deleteBracket.isPending ? "Eliminando..." : "Eliminar llave"}
+                </button>
+              </div>
+              {deleteError && (
+                <p className="text-sm text-red-600">{deleteError}</p>
+              )}
             </div>
           )}
         </>

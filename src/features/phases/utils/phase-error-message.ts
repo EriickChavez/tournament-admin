@@ -36,6 +36,8 @@ export function getPhaseErrorMessage(error: unknown): string {
                 return "La fase ya está cerrada";
             case "PHASE_NOT_CLOSED":
                 return "La fase no está cerrada";
+            case "PHASE_HAS_BRACKET":
+                return "No se puede reabrir: ya existe una llave generada con estos clasificados. Elimínala primero desde la fase de eliminatoria";
             case "PHASE_NOT_COMPLETE":
                 return `No se puede cerrar: faltan partidos por terminar. ${error.message}`;
             case "PHASE_HAS_PENDING_TIES":

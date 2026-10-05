@@ -4,6 +4,7 @@ import type {
     BracketNode,
     GenerateBracketPayload,
     ScheduleBracketNodePayload,
+    SetBracketNodePenaltiesPayload,
 } from "../types";
 
 export const bracketsApi = {
@@ -16,6 +17,10 @@ export const bracketsApi = {
             payload,
         ),
 
+    // Solo mientras ningún cruce tenga partidos ni resultados.
+    delete: (phaseId: string) =>
+        httpClient.delete<{ message: string }>(`/phases/${phaseId}/bracket`),
+
     scheduleNode: (
         phaseId: string,
         nodeId: string,
@@ -23,6 +28,17 @@ export const bracketsApi = {
     ) =>
         httpClient.post<{ node: BracketNode; match: Match }>(
             `/phases/${phaseId}/bracket/nodes/${nodeId}/schedule`,
+            payload,
+        ),
+
+    // Penales de un cruce a ida y vuelta cuyo global quedó empatado (null en ambos los borra).
+    setNodePenalties: (
+        phaseId: string,
+        nodeId: string,
+        payload: SetBracketNodePenaltiesPayload,
+    ) =>
+        httpClient.put<{ node: BracketNode }>(
+            `/phases/${phaseId}/bracket/nodes/${nodeId}/penalties`,
             payload,
         ),
 };

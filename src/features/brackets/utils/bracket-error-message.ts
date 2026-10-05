@@ -17,13 +17,21 @@ export function getBracketErrorMessage(error: unknown): string {
             case "BRACKET_NODE_NOT_READY":
                 return "Aún no se conocen los dos equipos de este cruce";
             case "BRACKET_NODE_ALREADY_SCHEDULED":
-                return "Este cruce ya tiene un partido programado";
+                return "Este partido ya está programado";
+            case "BRACKET_LEG_NOT_AVAILABLE":
+                return "Este cruce se juega a partido único";
+            case "BRACKET_FIRST_LEG_REQUIRED":
+                return "Programa primero el partido de ida";
+            case "SECOND_LEG_BEFORE_FIRST":
+                return "La vuelta debe programarse después de la ida";
+            case "BRACKET_PENALTIES_NOT_APPLICABLE":
+                return "Los penales solo aplican cuando terminaron los dos partidos y el global quedó empatado";
             case "BRACKET_ADVANCE_CONFLICT":
                 return "Este cambio alteraría quién avanza, y el siguiente cruce ya tiene partido. Borra o reprograma ese partido primero";
             case "BRACKET_MATCH_TEAMS_LOCKED":
                 return "Los equipos de un partido de la llave no se pueden cambiar";
             case "INVALID_PENALTIES":
-                return "Penales inválidos: solo aplican con empate y no pueden quedar empatados";
+                return "Penales inválidos: no pueden quedar empatados";
             case "NOT_TOURNAMENT_OWNER":
                 return "Solo el dueño del torneo puede generar la llave";
             default:
