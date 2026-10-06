@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "../../categories/api/categories-api";
 import { phasesApi } from "../../phases/api/phases-api";
+import { categoryClosuresApi } from "../../category-closures/api/category-closures-api";
 import type { PhaseGroup } from "../../phases/types";
 
 export interface ApplyPhaseFormatResult {
@@ -13,7 +14,8 @@ export interface ApplyPhaseFormatResult {
 /**
  * Copia fases (y grupos) de una categoría plantilla al resto del torneo.
  * No copia equipos.
- * Por defecto solo categorías que aún no tienen fases.
+ * Por defecto solo categorías que aún no tienen fases. Las categorías con el campeonato
+ * cerrado siempre se omiten.
  */
 export function useApplyPhaseFormat(
     tournamentId: string,
@@ -27,14 +29,18 @@ export function useApplyPhaseFormat(
         }): Promise<ApplyPhaseFormatResult> => {
             const force = options?.force ?? false;
 
-            const [{ categories }, { phases: sourcePhases }] = await Promise.all([
-                categoriesApi.listByTournament(tournamentId),
-                phasesApi.listByCategory(tournamentId, sourceCategoryId),
-            ]);
+            const [{ categories }, { phases: sourcePhases }, { closures }] =
+                await Promise.all([
+                    categoriesApi.listByTournament(tournamentId),
+                    phasesApi.listByCategory(tournamentId, sourceCategoryId),
+                    categoryClosuresApi.list(tournamentId),
+                ]);
 
             if (sourcePhases.length === 0) {
                 throw new Error("EMPTY_SOURCE");
             }
+
+            const closedCategoryIds = new Set(closures.map((c) => c.categoryId));
 
             const sourceGroupsByPhaseId = new Map<string, PhaseGroup[]>();
             await Promise.all(
@@ -57,6 +63,15 @@ export function useApplyPhaseFormat(
             };
 
             for (const category of targets) {
+                // Con el campeonato cerrado el backend rechaza fases nuevas: se omite de antemano.
+                if (closedCategoryIds.has(category.id)) {
+                    result.skipped.push({
+                        categoryId: category.id,
+                        reason: "Campeonato cerrado",
+                    });
+                    continue;
+                }
+
                 const { phases: existing } = await phasesApi.listByCategory(
                     tournamentId,
                     category.id,
@@ -77,7 +92,9 @@ export function useApplyPhaseFormat(
                         {
                             name: source.name,
                             type: source.type,
-                            status: source.status,
+                            // Una copia empieza sin resultados: nunca "Finalizada", aunque la
+                            // original sí lo esté (se marca así al cerrar la fase).
+                            status: "upcoming",
                             sortOrder: source.sortOrder,
                             startDate: source.startDate,
                             endDate: source.endDate,

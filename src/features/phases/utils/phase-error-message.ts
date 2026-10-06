@@ -12,6 +12,8 @@ export function getPhaseErrorMessage(error: unknown): string {
                 return "El torneo no fue encontrado";
             case "CATEGORY_NOT_FOUND":
                 return "La categoría no fue encontrada";
+            case "CATEGORY_CLOSED":
+                return "El campeonato de esta categoría está cerrado: no se pueden crear fases nuevas. Reábrelo primero desde la llave";
             case "PHASE_NOT_FOUND":
                 return "La fase ya no existe";
             case "PHASE_GROUP_NOT_FOUND":

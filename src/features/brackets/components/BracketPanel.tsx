@@ -5,6 +5,7 @@ import { useDeleteBracket } from "../hooks/use-delete-bracket";
 import { usePhases } from "../../phases/hooks/use-phases";
 import { useMatches } from "../../matches/hooks/use-matches";
 import { BracketNodeCard } from "./BracketNodeCard";
+import { ChampionshipClosurePanel } from "../../category-closures/components/ChampionshipClosurePanel";
 import {
   buildRoundSizes,
   describeSource,
@@ -295,6 +296,14 @@ export function BracketPanel({
           <p className="text-xl font-bold text-amber-900">{champion}</p>
         </div>
       )}
+
+      {/* Cierre del campeonato de la categoría: sugerencia, o banner si ya está cerrado. */}
+      <ChampionshipClosurePanel
+        tournamentId={tournamentId}
+        categoryId={categoryId}
+        championName={champion}
+        teamName={teamName}
+      />
 
       {nodes.length === 0 ? (
         <GenerateForm

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams, Navigate } from "react-router";
 import { useTournament } from "../features/tournaments/hooks/use-tournament";
 import { useCategories } from "../features/categories/hooks/use-categories";
+import { useCategoryClosures } from "../features/category-closures/hooks/use-category-closures";
 import { usePhases } from "../features/phases/hooks/use-phases";
 import { useCreatePhase } from "../features/phases/hooks/use-create-phase";
 import { useUpdatePhase } from "../features/phases/hooks/use-update-phase";
@@ -54,6 +55,7 @@ export function PhasesPage() {
   const { data: tournamentData, isLoading: loadingTournament } =
     useTournament(tournamentId);
   const { data: categoriesData } = useCategories(tournamentId);
+  const { data: closuresData } = useCategoryClosures(tournamentId);
   const { data, isLoading, isError, error, refetch } = usePhases(
     tournamentId,
     categoryId,
@@ -88,8 +90,12 @@ export function PhasesPage() {
   const tournament = tournamentData.tournament;
   const category = categoriesData?.categories?.find((c) => c.id === categoryId);
   const phases = data?.phases ?? [];
+  // Con el campeonato cerrado el backend rechaza fases nuevas; aquí solo se avisa y se bloquea el botón.
+  const isClosed =
+    closuresData?.closures.some((c) => c.categoryId === categoryId) ?? false;
 
   function handleOpenCreate() {
+    if (isClosed) return;
     setEditingPhase(null);
     setModalError(null);
     setModalOpen(true);
@@ -143,7 +149,7 @@ export function PhasesPage() {
     }
 
     const ok = window.confirm(
-      "Se copiarán estas fases (y sus grupos) a las demás categorías del torneo que aún no tengan fases.\n\nNo se copian equipos ni partidos.\n\n¿Continuar?",
+      "Se copiarán estas fases (y sus grupos) a las demás categorías del torneo que aún no tengan fases.\n\nNo se copian equipos ni partidos. Las categorías con el campeonato cerrado se omiten.\n\n¿Continuar?",
     );
     if (!ok) return;
 
@@ -156,7 +162,7 @@ export function PhasesPage() {
           window.alert(
             `Listo.\n` +
               `Categorías actualizadas: ${applied}\n` +
-              `Omitidas (ya tenían fases): ${skipped}\n` +
+              `Omitidas (ya tenían fases o están cerradas): ${skipped}\n` +
               `Fases creadas: ${result.createdPhases}\n` +
               `Grupos creados: ${result.createdGroups}`,
           );
@@ -226,7 +232,13 @@ export function PhasesPage() {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-white hover:opacity-90"
+          disabled={isClosed}
+          title={
+            isClosed
+              ? "El campeonato de esta categoría está cerrado"
+              : "Nueva fase"
+          }
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           <PlusIcon />
           Nueva fase
@@ -243,6 +255,14 @@ export function PhasesPage() {
             : "Aplicar a todas las categorías"}
         </button>
       </div>
+
+      {isClosed && (
+        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          El campeonato de esta categoría está cerrado, así que no se pueden
+          crear fases nuevas. Si necesitas hacer cambios, reábrelo desde la
+          llave de la fase de eliminatoria.
+        </div>
+      )}
 
       {isLoading && (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-gray-500">
@@ -274,7 +294,8 @@ export function PhasesPage() {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-white hover:opacity-90"
+            disabled={isClosed}
+            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             <PlusIcon />
             Crear fase
