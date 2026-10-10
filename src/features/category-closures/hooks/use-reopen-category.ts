@@ -10,6 +10,9 @@ export function useReopenCategory(tournamentId: string, categoryId: string) {
             queryClient.invalidateQueries({
                 queryKey: ["tournaments", tournamentId, "category-closures"],
             });
+            queryClient.invalidateQueries({
+                queryKey: ["tournaments", tournamentId, "matches", "competition-state"],
+            });
         },
     });
 }

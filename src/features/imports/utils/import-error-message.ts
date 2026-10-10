@@ -28,6 +28,10 @@ export function getImportErrorMessage(error: unknown): string {
                 return "El archivo excede el tamaño máximo permitido (5MB)";
             case "INVALID_IMPORT_FILE":
                 return `Archivo inválido: ${error.message}`;
+            case "CATEGORY_STARTED":
+                return "El archivo agrega equipos o jugadores a una categoría que ya empezó (tiene partidos en curso o terminados). Quita esas filas o deja sus partidos en «Programado».";
+            case "CATEGORY_FINISHED":
+                return "El archivo agrega equipos o jugadores a una categoría con el campeonato cerrado. Reábrelo primero o quita esas filas.";
             default:
                 return error.message || "Ocurrió un error al importar";
         }

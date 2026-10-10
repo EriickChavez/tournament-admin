@@ -13,6 +13,10 @@ export function getTeamErrorMessage(error: unknown): string {
             case "CATEGORY_NOT_FOUND":
             case "INVALID_CATEGORY":
                 return "La categoría no es válida para este torneo";
+            case "CATEGORY_STARTED":
+                return "Esta categoría ya empezó (tiene partidos en curso o terminados): ya no se pueden agregar, mover ni eliminar equipos. Si hace falta, deja sus partidos en «Programado».";
+            case "CATEGORY_FINISHED":
+                return "El campeonato de esta categoría está cerrado: sus equipos ya no se pueden cambiar. Reábrelo primero";
             case "TEAM_NOT_FOUND":
                 return "El equipo ya no existe";
             case "TEAM_NAME_ALREADY_IN_USE":

@@ -18,6 +18,10 @@ export function getPlayerErrorMessage(error: unknown): string {
                 return "La categoría no existe o no pertenece a este torneo";
             case "INVALID_TEAM":
                 return "El equipo no existe, no pertenece al torneo o no coincide con la categoría";
+            case "CATEGORY_STARTED":
+                return "Esta categoría ya empezó (tiene partidos en curso o terminados): ya no se pueden agregar, mover ni eliminar jugadores. Sí puedes corregir sus datos. Si hace falta, deja sus partidos en «Programado».";
+            case "CATEGORY_FINISHED":
+                return "El campeonato de esta categoría está cerrado: sus jugadores ya no se pueden cambiar. Reábrelo primero";
             case "VALIDATION_ERROR":
                 return error.message || "Revisa los datos del formulario";
             default:

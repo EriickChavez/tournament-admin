@@ -4,6 +4,8 @@ import { useCreateTeam } from "../hooks/use-create-team";
 import { useUpdateTeam } from "../hooks/use-update-team";
 import { useDeleteTeam } from "../hooks/use-delete-team";
 import { useCategories } from "../../categories/hooks/use-categories";
+import { useCategoryLocks } from "../../competition-state/hooks/use-category-locks";
+import { RosterLockNotice } from "../../competition-state/components/RosterLockNotice";
 import { TeamItem } from "./TeamItem";
 import { TeamFormModal } from "./TeamFormModal";
 import { Pagination } from "../../../shared/components/Pagination";
@@ -66,6 +68,7 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
     refetch,
   } = useTeams(tournamentId, page);
   const { data: categoriesData } = useCategories(tournamentId);
+  const { isOpen } = useCategoryLocks(tournamentId);
   const createTeam = useCreateTeam(tournamentId);
   const updateTeam = useUpdateTeam(tournamentId);
   const deleteTeam = useDeleteTeam(tournamentId);
@@ -89,6 +92,13 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
   const categories = categoriesData?.categories ?? [];
   const categoryTitleById = new Map(
     categories.map((c) => [c.id, c.title] as const),
+  );
+
+  // Solo se ofrecen categorías que todavía aceptan equipos. Al editar se conserva la
+  // categoría actual del equipo, aunque ya esté bloqueada, para que el selector la muestre.
+  const openCategories = categories.filter((c) => isOpen(c.id));
+  const formCategories = categories.filter(
+    (c) => isOpen(c.id) || c.id === editingTeam?.categoryId,
   );
 
   function handleOpenCreate() {
@@ -144,14 +154,29 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
   }
 
   function handleDeleteTeam(team: Team) {
+    if (!isOpen(team.categoryId)) {
+      window.alert(
+        "Esta categoría ya empezó o su campeonato está cerrado: ya no se pueden eliminar equipos.",
+      );
+      return;
+    }
     if (
       !window.confirm(
         `¿Eliminar el equipo "${team.name}"? Esta acción no se puede deshacer.`,
       )
     )
       return;
-    deleteTeam.mutate(team.id);
+    deleteTeam.mutate(team.id, {
+      onError: (err) => window.alert(getTeamErrorMessage(err)),
+    });
   }
+
+  const newTeamTitle =
+    categories.length === 0
+      ? "Crea una categoría primero"
+      : openCategories.length === 0
+        ? "Todas las categorías ya empezaron o están cerradas"
+        : "Nuevo equipo";
 
   return (
     <div>
@@ -170,17 +195,15 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
         <button
           type="button"
           onClick={handleOpenCreate}
-          disabled={categories.length === 0}
+          disabled={openCategories.length === 0}
           className="min-h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium flex items-center gap-1.5 hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0"
-          title={
-            categories.length === 0
-              ? "Crea una categoría primero"
-              : "Nuevo equipo"
-          }
+          title={newTeamTitle}
         >
           <PlusIcon /> Nuevo equipo
         </button>
       </div>
+
+      <RosterLockNotice tournamentId={tournamentId} categories={categories} />
 
       {isLoading && (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-6">
@@ -229,7 +252,7 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
               ? "Primero crea una categoría y después agrega los equipos participantes."
               : "Agrega los equipos que participarán en cada categoría del torneo."}
           </p>
-          {categories.length > 0 && (
+          {openCategories.length > 0 && (
             <button
               type="button"
               onClick={handleOpenCreate}
@@ -269,7 +292,7 @@ export function TeamsSection({ tournamentId }: TeamsSectionProps) {
         onClose={handleCloseModal}
         onSubmit={handleSubmitForm}
         team={editingTeam}
-        categories={categories}
+        categories={formCategories}
         isSubmitting={createTeam.isPending || updateTeam.isPending}
         errorMessage={modalError}
       />

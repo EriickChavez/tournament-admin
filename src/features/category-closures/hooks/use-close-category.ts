@@ -10,6 +10,10 @@ export function useCloseCategory(tournamentId: string, categoryId: string) {
             queryClient.invalidateQueries({
                 queryKey: ["tournaments", tournamentId, "category-closures"],
             });
+            // Al cerrar, la categoría pasa a "finished": se refresca el estado de la competencia.
+            queryClient.invalidateQueries({
+                queryKey: ["tournaments", tournamentId, "matches", "competition-state"],
+            });
         },
     });
 }
