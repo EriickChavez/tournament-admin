@@ -83,6 +83,7 @@ interface MatchItemProps {
   groupName?: string;
   onEdit: (match: Match) => void;
   onDelete: (match: Match) => void;
+  onManageEvents?: (match: Match) => void;
   isDeleting: boolean;
 }
 
@@ -94,6 +95,7 @@ export function MatchItem({
   groupName,
   onEdit,
   onDelete,
+  onManageEvents,
   isDeleting,
 }: MatchItemProps) {
   const formattedDate = new Date(match.scheduledAt).toLocaleString("es-MX", {
@@ -110,6 +112,13 @@ export function MatchItem({
             <span className="text-gray-400 font-normal">vs</span>{" "}
             {awayTeamName ?? "Equipo visitante"}
           </h3>
+          {match.homeScore != null && match.awayScore != null && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-900 text-white text-xs font-bold tabular-nums">
+              {match.homeScore} - {match.awayScore}
+              {match.homePenalties != null &&
+                ` (${match.homePenalties}-${match.awayPenalties} pen)`}
+            </span>
+          )}
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${STATUS_STYLES[match.status]}`}
           >
@@ -139,6 +148,16 @@ export function MatchItem({
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        {onManageEvents && (
+          <button
+            type="button"
+            onClick={() => onManageEvents(match)}
+            className="min-h-8 px-3 rounded-lg border border-emerald-200 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+            title="Cédula y eventos de partido"
+          >
+            <span>⚽</span> Cédula / Goles
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onEdit(match)}

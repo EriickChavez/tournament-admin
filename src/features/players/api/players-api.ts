@@ -15,6 +15,11 @@ export const playersApi = {
             `/tournaments/${tournamentId}/players?page=${pagination.page}&limit=${pagination.limit}`,
         ),
 
+    listByTeam: (teamId: string) =>
+        httpClient.get<{ players: Player[]; pagination: PaginationMeta }>(
+            `/teams/${teamId}/players?page=1&limit=100`,
+        ),
+
     create: (tournamentId: string, payload: CreatePlayerPayload) =>
         httpClient.post<{ player: Player }>(
             `/tournaments/${tournamentId}/players`,

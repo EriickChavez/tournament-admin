@@ -8,6 +8,7 @@ import { useCategories } from "../../categories/hooks/use-categories";
 import { useTeams } from "../../teams/hooks/use-teams";
 import { MatchItem } from "./MatchItem";
 import { MatchFormModal } from "./MatchFormModal";
+import { MatchEventsModal } from "../../match-events/components/MatchEventsModal";
 import { Pagination } from "../../../shared/components/Pagination";
 import { getMatchErrorMessage } from "../utils/match-error-message";
 import { datetimeLocalToIso } from "../utils/datetime";
@@ -57,7 +58,6 @@ const STATUS_FILTER_OPTIONS: { value: MatchStatus | ""; label: string }[] = [
   { value: "postponed", label: "Pospuesto" },
 ];
 
-// Si el grupo se llama "A", se muestra "Grupo A"; si ya dice "Grupo A", se deja igual.
 function toGroupLabel(name: string): string {
   return /^grupo\b/i.test(name) ? name : `Grupo ${name}`;
 }
@@ -71,9 +71,6 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<MatchStatus | "">("");
 
-  // Si cambia el torneo, arrancamos en la página 1 y sin filtros. Se ajusta
-  // durante el render (patrón recomendado por React) en vez de con un
-  // useEffect.
   const [prevTournamentId, setPrevTournamentId] = useState(tournamentId);
   if (tournamentId !== prevTournamentId) {
     setPrevTournamentId(tournamentId);
@@ -96,16 +93,12 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
     refetch,
   } = useMatches(tournamentId, page, undefined, filters);
   const { data: categoriesData } = useCategories(tournamentId);
-  // Límite máximo: esta lista alimenta los selects del modal y el lookup de
-  // nombres, no es la vista paginada — necesita "todos" los equipos.
   const { data: teamsData } = useTeams(tournamentId, 1, 100);
 
   const createMatch = useCreateMatch(tournamentId);
   const updateMatch = useUpdateMatch(tournamentId);
   const deleteMatch = useDeleteMatch(tournamentId);
 
-  // Si borramos el último partido de una página y esa página ya no existe,
-  // regresamos a la última página válida.
   if (
     matchesData &&
     matchesData.pagination.totalPages > 0 &&
@@ -116,13 +109,13 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [eventsMatch, setEventsMatch] = useState<Match | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
   const matches = matchesData?.matches ?? [];
   const categories = categoriesData?.categories ?? [];
   const teams = teamsData?.teams ?? [];
 
-  // Nombres de grupo de las fases que aparecen en la página actual.
   const groupNameById = useMatchGroupNames(matches);
 
   const categoryTitleById = new Map(
@@ -353,6 +346,7 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
                 {...(groupName ? { groupName: toGroupLabel(groupName) } : {})}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteMatch}
+                onManageEvents={(m) => setEventsMatch(m)}
                 isDeleting={deleteMatch.isPending}
               />
             );
@@ -377,6 +371,13 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
         teams={teams}
         isSubmitting={createMatch.isPending || updateMatch.isPending}
         errorMessage={modalError}
+      />
+
+      <MatchEventsModal
+        isOpen={Boolean(eventsMatch)}
+        onClose={() => setEventsMatch(null)}
+        match={eventsMatch}
+        tournamentId={tournamentId}
       />
     </div>
   );

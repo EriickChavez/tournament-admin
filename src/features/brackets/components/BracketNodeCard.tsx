@@ -5,6 +5,7 @@ import { useSetBracketNodePenalties } from "../hooks/use-set-bracket-node-penalt
 import { getBracketErrorMessage } from "../utils/bracket-error-message";
 import { datetimeLocalToIso } from "../../matches/utils/datetime";
 import { MATCH_STATUS_LABELS } from "../../matches/types";
+import { MatchEventsModal } from "../../match-events/components/MatchEventsModal";
 import type { Match } from "../../matches/types";
 import type { BracketNode } from "../types";
 
@@ -21,10 +22,6 @@ type Mode =
 
 type Goals = { home: number; away: number };
 
-/**
- * Goles de un partido expresados respecto al cruce. En la vuelta el local del partido es el
- * visitante del cruce, así que se invierten.
- */
 function goalsOf(leg: 1 | 2, match: Match | undefined): Goals | null {
   if (!match || match.homeScore == null || match.awayScore == null) return null;
   return leg === 1
@@ -45,7 +42,6 @@ interface TeamRowProps {
   placeholder: string;
   seed: number | null;
   isWinner: boolean;
-  /** Una celda en partido único; tres (ida, vuelta, global) en ida y vuelta. */
   cells: Array<number | null>;
   penalties: number | null | undefined;
 }
@@ -126,9 +122,11 @@ function ScheduleForm({
   twoLegged: boolean;
 }) {
   const schedule = useScheduleBracketNode(tournamentId, phaseId);
-  const [datetime, setDatetime] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
   const [venue, setVenue] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const canSave = scheduledAt.trim() !== "";
 
   function handleSave() {
     setError(null);
@@ -136,9 +134,9 @@ function ScheduleForm({
       {
         nodeId,
         payload: {
-          scheduledAt: datetimeLocalToIso(datetime),
+          leg,
+          scheduledAt: datetimeLocalToIso(scheduledAt),
           ...(venue.trim() ? { venue: venue.trim() } : {}),
-          ...(twoLegged ? { leg } : {}),
         },
       },
       {
@@ -148,38 +146,46 @@ function ScheduleForm({
     );
   }
 
+  const inputClass =
+    "min-h-9 w-full rounded-lg border border-gray-200 px-3 text-xs outline-none focus:border-primary";
+
   return (
     <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
       <p className="text-xs font-medium text-gray-600">
         {twoLegged
           ? leg === 1
-            ? "Partido de ida"
-            : "Partido de vuelta"
-          : "Partido"}
+            ? "Programar partido de ida"
+            : "Programar partido de vuelta"
+          : "Programar partido"}
       </p>
-      <input
-        type="datetime-local"
-        value={datetime}
-        onChange={(e) => setDatetime(e.target.value)}
-        className="min-h-9 w-full rounded-lg border border-gray-200 px-2 text-sm outline-none focus:border-primary"
-      />
-      <input
-        type="text"
-        maxLength={200}
-        value={venue}
-        onChange={(e) => setVenue(e.target.value)}
-        placeholder="Sede (opcional)"
-        className="min-h-9 w-full rounded-lg border border-gray-200 px-2 text-sm outline-none focus:border-primary"
-      />
+      <div>
+        <label className="text-[11px] text-gray-500">Fecha y hora *</label>
+        <input
+          type="datetime-local"
+          value={scheduledAt}
+          onChange={(e) => setScheduledAt(e.target.value)}
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className="text-[11px] text-gray-500">Sede (opcional)</label>
+        <input
+          type="text"
+          value={venue}
+          onChange={(e) => setVenue(e.target.value)}
+          placeholder="Cancha o estadio"
+          className={inputClass}
+        />
+      </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
           type="button"
           onClick={handleSave}
-          disabled={!datetime || schedule.isPending}
+          disabled={!canSave || schedule.isPending}
           className="min-h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
-          {schedule.isPending ? "Guardando..." : "Programar"}
+          {schedule.isPending ? "Guardando..." : "Guardar"}
         </button>
         <button type="button" onClick={onDone} className={BUTTON}>
           Cancelar
@@ -195,21 +201,20 @@ function ResultForm({
   homeName,
   awayName,
   allowPenalties,
+  onOpenEvents,
   onDone,
 }: BaseFormProps & {
   match: Match;
   homeName: string;
   awayName: string;
-  /** Solo en partido único; en ida y vuelta los penales son del cruce. */
   allowPenalties: boolean;
+  onOpenEvents?: (match: Match) => void;
 }) {
   const save = useSaveBracketResult(tournamentId);
-  const [home, setHome] = useState(
-    match.homeScore != null ? String(match.homeScore) : "",
-  );
-  const [away, setAway] = useState(
-    match.awayScore != null ? String(match.awayScore) : "",
-  );
+  const homeScore = match.homeScore ?? 0;
+  const awayScore = match.awayScore ?? 0;
+  const isTie = homeScore === awayScore;
+
   const [homePen, setHomePen] = useState(
     match.homePenalties != null ? String(match.homePenalties) : "",
   );
@@ -218,13 +223,12 @@ function ResultForm({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const scoresFilled = home !== "" && away !== "";
-  const needsPenalties = allowPenalties && scoresFilled && home === away;
+  const needsPenalties = allowPenalties && isTie;
   const penaltiesOk =
     !needsPenalties ||
     (homePen !== "" && awayPen !== "" && homePen !== awayPen);
-  const canSave = scoresFilled && penaltiesOk;
-  const hasResult = match.homeScore != null;
+  const canSave = penaltiesOk;
+  const hasResult = match.status === "finished";
 
   function handleSave() {
     setError(null);
@@ -232,10 +236,7 @@ function ResultForm({
       {
         matchId: match.id,
         payload: {
-          homeScore: Number(home),
-          awayScore: Number(away),
           status: "finished",
-          // Con marcador no empatado el backend borra los penales viejos por su cuenta.
           ...(needsPenalties
             ? { homePenalties: Number(homePen), awayPenalties: Number(awayPen) }
             : {}),
@@ -255,12 +256,10 @@ function ResultForm({
       {
         matchId: match.id,
         payload: {
-          homeScore: null,
-          awayScore: null,
+          status: "scheduled",
           ...(allowPenalties
             ? { homePenalties: null, awayPenalties: null }
             : {}),
-          status: "scheduled",
         },
       },
       {
@@ -274,28 +273,27 @@ function ResultForm({
     "min-h-9 w-14 rounded-lg border border-gray-200 px-2 text-center text-sm outline-none focus:border-primary";
 
   return (
-    <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
-      <p className="text-xs font-medium text-gray-600">
-        {homeName} vs {awayName}
-      </p>
-      <div className="flex items-center gap-2">
-        <span className="w-20 text-xs text-gray-500">Goles</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={home}
-          onChange={(e) => setHome(cleanScore(e.target.value))}
-          className={inputClass}
-        />
-        <span className="text-gray-400">-</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={away}
-          onChange={(e) => setAway(cleanScore(e.target.value))}
-          className={inputClass}
-        />
+    <div className="mt-3 space-y-3 border-t border-gray-100 pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-gray-700">
+          {homeName} vs {awayName}
+        </p>
+        <span className="text-sm font-bold text-gray-900 tabular-nums">
+          {match.homeScore != null && match.awayScore != null
+            ? `${match.homeScore} - ${match.awayScore}`
+            : "0 - 0"}
+        </span>
       </div>
+
+      {onOpenEvents && (
+        <button
+          type="button"
+          onClick={() => onOpenEvents(match)}
+          className="w-full py-2 px-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
+        >
+          <span>⚽</span> Registrar goles, jugadores y minutos
+        </button>
+      )}
 
       {needsPenalties && (
         <div className="flex items-center gap-2">
@@ -325,14 +323,14 @@ function ResultForm({
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pt-1">
         <button
           type="button"
           onClick={handleSave}
           disabled={!canSave || save.isPending}
           className="min-h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
-          {save.isPending ? "Guardando..." : "Guardar resultado"}
+          {save.isPending ? "Guardando..." : "Finalizar partido"}
         </button>
         {hasResult && (
           <button
@@ -341,11 +339,11 @@ function ResultForm({
             disabled={save.isPending}
             className="min-h-8 rounded-lg border border-red-200 bg-white px-3 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
           >
-            Quitar resultado
+            Reabrir partido
           </button>
         )}
         <button type="button" onClick={onDone} className={BUTTON}>
-          Cancelar
+          Cerrar
         </button>
       </div>
     </div>
@@ -413,13 +411,13 @@ function PenaltiesForm({
           className={inputClass}
         />
       </div>
-      {home !== "" && away !== "" && home === away && (
+      {!canSave && (
         <p className="text-xs text-amber-600">
-          Los penales no pueden quedar iguales.
+          Captura ambos marcadores de penales (no pueden quedar iguales).
         </p>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={() => submit(Number(home), Number(away))}
@@ -454,9 +452,7 @@ interface BracketNodeCardProps {
   homePlaceholder: string;
   awayPlaceholder: string;
   teamName: (id: string) => string;
-  /** Partido de ida (o el único). */
   firstMatch: Match | undefined;
-  /** Partido de vuelta (solo cruces a ida y vuelta). */
   secondMatch: Match | undefined;
 }
 
@@ -472,6 +468,7 @@ export function BracketNodeCard({
   secondMatch,
 }: BracketNodeCardProps) {
   const [mode, setMode] = useState<Mode>(null);
+  const [eventsMatch, setEventsMatch] = useState<Match | null>(null);
 
   const twoLegged = node.legs === 2;
   const ready = node.homeTeamId !== null && node.awayTeamId !== null;
@@ -482,7 +479,6 @@ export function BracketNodeCard({
     ? teamName(node.awayTeamId)
     : awayPlaceholder;
 
-  // Goles por partido, respecto al cruce, y global (solo cuando los dos partidos terminaron).
   const firstGoals = goalsOf(1, firstMatch);
   const secondGoals = twoLegged ? goalsOf(2, secondMatch) : null;
   const aggregate =
@@ -498,7 +494,6 @@ export function BracketNodeCard({
       : null;
   const aggregateTied = aggregate !== null && aggregate.home === aggregate.away;
 
-  // Partido único terminado en empate y sin ganador: faltan penales.
   const singleDrawPending =
     !twoLegged &&
     firstMatch?.status === "finished" &&
@@ -521,7 +516,6 @@ export function BracketNodeCard({
       ]
     : [firstMatch?.awayScore ?? null];
 
-  // Penales: del cruce en ida y vuelta; del propio partido en partido único.
   const homePenalties = twoLegged
     ? node.homePenalties
     : firstMatch?.homePenalties;
@@ -645,6 +639,16 @@ export function BracketNodeCard({
             </button>
           )}
 
+          {firstMatch && (
+            <button
+              type="button"
+              onClick={() => setEventsMatch(firstMatch)}
+              className="min-h-8 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 flex items-center gap-1"
+            >
+              ⚽ Cédula {twoLegged ? "ida" : ""}
+            </button>
+          )}
+
           {twoLegged && firstMatch && !secondMatch && (
             <button
               type="button"
@@ -655,15 +659,24 @@ export function BracketNodeCard({
             </button>
           )}
           {twoLegged && secondMatch && (
-            <button
-              type="button"
-              onClick={() => setMode({ kind: "result", leg: 2 })}
-              className={BUTTON}
-            >
-              {secondMatch.homeScore != null
-                ? "Editar resultado de la vuelta"
-                : "Resultado de la vuelta"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setMode({ kind: "result", leg: 2 })}
+                className={BUTTON}
+              >
+                {secondMatch.homeScore != null
+                  ? "Editar resultado de la vuelta"
+                  : "Resultado de la vuelta"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEventsMatch(secondMatch)}
+                className="min-h-8 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 flex items-center gap-1"
+              >
+                ⚽ Cédula vuelta
+              </button>
+            </>
           )}
 
           {twoLegged && (aggregateTied || node.homePenalties != null) && (
@@ -697,6 +710,7 @@ export function BracketNodeCard({
           homeName={teamName(resultMatch.homeTeamId)}
           awayName={teamName(resultMatch.awayTeamId)}
           allowPenalties={!twoLegged}
+          onOpenEvents={(m) => setEventsMatch(m)}
           onDone={() => setMode(null)}
         />
       )}
@@ -710,6 +724,13 @@ export function BracketNodeCard({
           onDone={() => setMode(null)}
         />
       )}
+
+      <MatchEventsModal
+        isOpen={Boolean(eventsMatch)}
+        onClose={() => setEventsMatch(null)}
+        match={eventsMatch}
+        tournamentId={tournamentId}
+      />
     </div>
   );
 }
