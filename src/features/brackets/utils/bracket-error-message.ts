@@ -42,6 +42,8 @@ export function getBracketErrorMessage(error: unknown): string {
                 return "El campeonato de esta categoría está cerrado. Reábrelo primero";
             case "NOT_TOURNAMENT_OWNER":
                 return "Solo el dueño del torneo puede hacer esta acción";
+            case "CATEGORY_FINISHED":
+                return "El campeonato de esta categoría está cerrado: ya no se pueden hacer cambios. Reábrelo primero";
             default:
                 return getMatchErrorMessage(error);
         }

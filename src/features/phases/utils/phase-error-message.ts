@@ -46,6 +46,10 @@ export function getPhaseErrorMessage(error: unknown): string {
                 return "No se puede cerrar: hay empates sin resolver que afectan quién clasifica";
             case "INVALID_QUALIFICATION_CONFIG":
                 return `Configuración de clasificación inválida: ${error.message}`;
+            case "CATEGORY_FINISHED":
+                return "El campeonato de esta categoría está cerrado: ya no se pueden hacer cambios. Reábrelo primero";
+            case "PHASE_STRUCTURE_LOCKED":
+                return "Esta fase ya tiene partidos: sus grupos y la asignación de equipos ya no se pueden cambiar. Elimina primero sus partidos";
             case "VALIDATION_ERROR":
                 return error.message || "Revisa los datos del formulario";
             default:

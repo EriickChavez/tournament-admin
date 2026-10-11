@@ -22,6 +22,8 @@ export function getMatchErrorMessage(error: unknown): string {
                 return "El estado del partido no es válido";
             case "VALIDATION_ERROR":
                 return error.message || "Revisa los datos del formulario";
+            case "CATEGORY_FINISHED":
+                return "El campeonato de esta categoría está cerrado: ya no se pueden crear ni modificar partidos ni resultados. Reábrelo primero";
             default:
                 return error.message || "Ocurrió un error con el partido";
         }
