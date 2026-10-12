@@ -1,11 +1,17 @@
-import { useState, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Match, MatchStatus } from "../../matches/types";
 import { MATCH_STATUS_LABELS } from "../../matches/types";
+import { getMatchErrorMessage } from "../../matches/utils/match-error-message";
 import { useMatchEvents } from "../hooks/use-match-events";
 import { useCreateMatchEvent } from "../hooks/use-create-match-event";
 import { useDeleteMatchEvent } from "../hooks/use-delete-match-event";
 import { useTeamPlayers } from "../../players/hooks/use-team-players";
 import { useUpdateMatch } from "../../matches/hooks/use-update-match";
+import {
+  useStartMatch,
+  useFinishMatch,
+  useReopenMatch,
+} from "../../matches/hooks/use-match-lifecycle";
 import type { MatchEventType } from "../types";
 
 interface MatchEventsModalProps {
@@ -23,6 +29,16 @@ const EVENT_TYPE_LABELS: Record<
     label: "Gol",
     icon: "⚽",
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  gol_penal: {
+    label: "Gol de penal",
+    icon: "🥅",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  autogol: {
+    label: "Autogol",
+    icon: "🙈",
+    badge: "bg-orange-50 text-orange-700 border-orange-200",
   },
   tarjeta_amarilla: {
     label: "Tarjeta amarilla",
@@ -51,6 +67,12 @@ const EVENT_TYPE_LABELS: Record<
   },
 };
 
+const LIFECYCLE_MESSAGES = {
+  start: "Partido iniciado: la cédula está abierta",
+  finish: "Partido finalizado: la cédula quedó cerrada",
+  reopen: "Cédula reabierta: ya puedes corregir los eventos",
+} as const;
+
 export function MatchEventsModal({
   isOpen,
   onClose,
@@ -58,18 +80,40 @@ export function MatchEventsModal({
   tournamentId,
 }: MatchEventsModalProps) {
   if (!isOpen || !match) return null;
+  // key: al cambiar de partido se reinicia todo el estado del modal.
+  return (
+    <MatchEventsContent
+      key={match.id}
+      onClose={onClose}
+      match={match}
+      tournamentId={tournamentId}
+    />
+  );
+}
 
+function MatchEventsContent({
+  onClose,
+  match,
+  tournamentId,
+}: {
+  onClose: () => void;
+  match: Match;
+  tournamentId: string;
+}) {
   const matchId = match.id;
   const homeTeamId = match.homeTeamId;
   const awayTeamId = match.awayTeamId;
   const homeName = match.homeTeam?.name ?? "Local";
   const awayName = match.awayTeam?.name ?? "Visitante";
 
-  const { data: eventsData, isLoading: isLoadingEvents } = useMatchEvents(matchId);
+  const { data: eventsData, isLoading: isLoadingEvents } =
+    useMatchEvents(matchId);
 
   // Cargamos los jugadores de ambos equipos directamente (sin importar cuántos miles de jugadores tenga el torneo)
-  const { data: homePlayersData, isLoading: isLoadingHome } = useTeamPlayers(homeTeamId);
-  const { data: awayPlayersData, isLoading: isLoadingAway } = useTeamPlayers(awayTeamId);
+  const { data: homePlayersData, isLoading: isLoadingHome } =
+    useTeamPlayers(homeTeamId);
+  const { data: awayPlayersData, isLoading: isLoadingAway } =
+    useTeamPlayers(awayTeamId);
 
   const homePlayers = homePlayersData?.players ?? [];
   const awayPlayers = awayPlayersData?.players ?? [];
@@ -77,11 +121,15 @@ export function MatchEventsModal({
   const createEventMutation = useCreateMatchEvent(tournamentId, matchId);
   const deleteEventMutation = useDeleteMatchEvent(tournamentId, matchId);
   const updateMatchMutation = useUpdateMatch(tournamentId);
+  const startMatch = useStartMatch(tournamentId);
+  const finishMatch = useFinishMatch(tournamentId);
+  const reopenMatch = useReopenMatch(tournamentId);
 
   const [selectedTeamId, setSelectedTeamId] = useState<string>(homeTeamId);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [eventType, setEventType] = useState<MatchEventType>("gol");
   const [minute, setMinute] = useState<string>("");
+  // El estado vive aquí porque `match` es una copia que no se refresca sola.
   const [status, setStatus] = useState<MatchStatus>(match.status);
   const [homePen, setHomePen] = useState<string>(
     match.homePenalties != null ? String(match.homePenalties) : "",
@@ -92,8 +140,24 @@ export function MatchEventsModal({
   const [formError, setFormError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  // Mismo clientEventId mientras el usuario reintente el mismo evento; cambia si edita el formulario.
+  const clientEventIdRef = useRef<string | null>(null);
+  const resetClientEventId = () => {
+    clientEventIdRef.current = null;
+  };
+
+  const isLive = status === "in_progress";
+  const isFinished = status === "finished";
+  const canStart = status === "scheduled" || status === "postponed";
+  const isBusy =
+    startMatch.isPending ||
+    finishMatch.isPending ||
+    reopenMatch.isPending ||
+    updateMatchMutation.isPending;
+
   const teamPlayers = selectedTeamId === homeTeamId ? homePlayers : awayPlayers;
-  const isLoadingPlayers = selectedTeamId === homeTeamId ? isLoadingHome : isLoadingAway;
+  const isLoadingPlayers =
+    selectedTeamId === homeTeamId ? isLoadingHome : isLoadingAway;
 
   const playerMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -106,19 +170,38 @@ export function MatchEventsModal({
 
   const events = eventsData?.events ?? [];
 
-  // Marcador derivado de los eventos
-  const homeGoals = events.filter(
-    (e) => e.eventType === "gol" && e.teamId === homeTeamId,
-  ).length;
-  const awayGoals = events.filter(
-    (e) => e.eventType === "gol" && e.teamId === awayTeamId,
-  ).length;
+  // Mismo cálculo que el backend: gol y gol de penal suman al equipo del evento;
+  // el autogol suma al rival del equipo del jugador.
+  const { homeGoals, awayGoals } = useMemo(() => {
+    let home = 0;
+    let away = 0;
+    for (const e of events) {
+      let scoringTeamId: string | null = null;
+      if (e.eventType === "gol" || e.eventType === "gol_penal") {
+        scoringTeamId = e.teamId;
+      } else if (e.eventType === "autogol") {
+        scoringTeamId = e.teamId === homeTeamId ? awayTeamId : homeTeamId;
+      }
+      if (scoringTeamId === homeTeamId) home += 1;
+      else if (scoringTeamId === awayTeamId) away += 1;
+    }
+    return { homeGoals: home, awayGoals: away };
+  }, [events, homeTeamId, awayTeamId]);
 
   const isTie = homeGoals === awayGoals;
+  const showPenalties = isTie && (isLive || isFinished);
+
+  function flash(message: string) {
+    setStatusMessage(message);
+    setTimeout(() => setStatusMessage(null), 3000);
+  }
 
   async function handleAddEvent(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
+    if (!clientEventIdRef.current) {
+      clientEventIdRef.current = crypto.randomUUID();
+    }
     try {
       const minVal = minute.trim() ? parseInt(minute.trim(), 10) : undefined;
       await createEventMutation.mutateAsync({
@@ -126,11 +209,13 @@ export function MatchEventsModal({
         teamId: selectedTeamId,
         playerId: selectedPlayerId || undefined,
         minute: minVal != null && !isNaN(minVal) ? minVal : undefined,
+        clientEventId: clientEventIdRef.current,
       });
+      resetClientEventId();
       setMinute("");
       setSelectedPlayerId("");
-    } catch (err: any) {
-      setFormError(err?.message || "Error al registrar el evento");
+    } catch (err) {
+      setFormError(getMatchErrorMessage(err));
     }
   }
 
@@ -138,36 +223,58 @@ export function MatchEventsModal({
     setFormError(null);
     try {
       await deleteEventMutation.mutateAsync(id);
-    } catch (err: any) {
-      setFormError(err?.message || "Error al eliminar el evento");
+    } catch (err) {
+      setFormError(getMatchErrorMessage(err));
     }
   }
 
-  async function handleUpdateStatus() {
+  async function handleLifecycle(action: "start" | "finish" | "reopen") {
     setStatusMessage(null);
     setFormError(null);
     try {
-      const payload: any = {
-        status,
-      };
-      if (isTie && homePen !== "" && awayPen !== "") {
-        payload.homePenalties = Number(homePen);
-        payload.awayPenalties = Number(awayPen);
-      } else if (!isTie) {
-        payload.homePenalties = null;
-        payload.awayPenalties = null;
-      }
+      const mutation =
+        action === "start"
+          ? startMatch
+          : action === "finish"
+            ? finishMatch
+            : reopenMatch;
+      const { match: updated } = await mutation.mutateAsync(matchId);
+      setStatus(updated.status);
 
-      await updateMatchMutation.mutateAsync({
-        id: matchId,
-        payload,
-      });
-      setStatusMessage("Estado del partido actualizado");
-      setTimeout(() => setStatusMessage(null), 3000);
-    } catch (err: any) {
-      setFormError(err?.message || "Error al actualizar el estado");
+      // Los penales ya no viajan con el estado: se guardan justo después de finalizar.
+      if (action === "finish" && isTie && homePen !== "" && awayPen !== "") {
+        await updateMatchMutation.mutateAsync({
+          id: matchId,
+          payload: {
+            homePenalties: Number(homePen),
+            awayPenalties: Number(awayPen),
+          },
+        });
+      }
+      flash(LIFECYCLE_MESSAGES[action]);
+    } catch (err) {
+      setFormError(getMatchErrorMessage(err));
     }
   }
+
+  async function handleSavePenalties() {
+    setStatusMessage(null);
+    setFormError(null);
+    try {
+      await updateMatchMutation.mutateAsync({
+        id: matchId,
+        payload: {
+          homePenalties: Number(homePen),
+          awayPenalties: Number(awayPen),
+        },
+      });
+      flash("Penales guardados");
+    } catch (err) {
+      setFormError(getMatchErrorMessage(err));
+    }
+  }
+
+  const penaltiesFilled = homePen !== "" && awayPen !== "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -223,7 +330,7 @@ export function MatchEventsModal({
                     {awayGoals}
                   </span>
                 </div>
-                {isTie && (homePen !== "" || awayPen !== "") && (
+                {showPenalties && (homePen !== "" || awayPen !== "") && (
                   <span className="text-xs text-gray-500 mt-1">
                     (Penales: {homePen || "0"} - {awayPen || "0"})
                   </span>
@@ -244,56 +351,84 @@ export function MatchEventsModal({
               </div>
             </div>
 
-            {/* Selector de estado rápido */}
+            {/* Control de la cédula */}
             <div className="mt-4 pt-3 border-t border-gray-200/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <label className="font-medium text-gray-600">Estado:</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as MatchStatus)}
-                  className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 outline-none focus:border-primary"
-                >
-                  <option value="scheduled">Programado</option>
-                  <option value="in_progress">En curso</option>
-                  <option value="finished">Finalizado</option>
-                  <option value="postponed">Pospuesto</option>
-                  <option value="cancelled">Cancelado</option>
-                </select>
+              <p className="text-gray-500">
+                {canStart && "Inicia el partido para abrir la cédula."}
+                {isLive && "Cédula abierta: registra los eventos del partido."}
+                {isFinished &&
+                  "Cédula cerrada. Reábrela si necesitas corregir algo."}
+                {status === "cancelled" &&
+                  "Partido cancelado: reprográmalo desde Editar partido."}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {showPenalties && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600 font-medium">Penales:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Loc"
+                      value={homePen}
+                      onChange={(e) => setHomePen(e.target.value)}
+                      className="w-12 rounded-lg border border-gray-300 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-primary"
+                    />
+                    <span>-</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Vis"
+                      value={awayPen}
+                      onChange={(e) => setAwayPen(e.target.value)}
+                      className="w-12 rounded-lg border border-gray-300 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-primary"
+                    />
+                    {isFinished && (
+                      <button
+                        type="button"
+                        onClick={handleSavePenalties}
+                        disabled={isBusy || !penaltiesFilled}
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        Guardar penales
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {canStart && (
+                  <button
+                    type="button"
+                    onClick={() => handleLifecycle("start")}
+                    disabled={isBusy}
+                    className="rounded-lg bg-emerald-600 text-white px-3 py-1 font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                  >
+                    {startMatch.isPending ? "Iniciando..." : "Iniciar partido"}
+                  </button>
+                )}
+                {isLive && (
+                  <button
+                    type="button"
+                    onClick={() => handleLifecycle("finish")}
+                    disabled={isBusy}
+                    className="rounded-lg bg-gray-800 text-white px-3 py-1 font-medium hover:bg-gray-900 disabled:opacity-50 transition-colors"
+                  >
+                    {finishMatch.isPending || updateMatchMutation.isPending
+                      ? "Finalizando..."
+                      : "Finalizar partido"}
+                  </button>
+                )}
+                {isFinished && (
+                  <button
+                    type="button"
+                    onClick={() => handleLifecycle("reopen")}
+                    disabled={isBusy}
+                    className="rounded-lg border border-red-200 bg-white text-red-600 px-3 py-1 font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  >
+                    {reopenMatch.isPending ? "Reabriendo..." : "Reabrir cédula"}
+                  </button>
+                )}
               </div>
-
-              {isTie && status === "finished" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 font-medium">Penales:</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Loc"
-                    value={homePen}
-                    onChange={(e) => setHomePen(e.target.value)}
-                    className="w-12 rounded-lg border border-gray-300 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-primary"
-                  />
-                  <span>-</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Vis"
-                    value={awayPen}
-                    onChange={(e) => setAwayPen(e.target.value)}
-                    className="w-12 rounded-lg border border-gray-300 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-primary"
-                  />
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={handleUpdateStatus}
-                disabled={updateMatchMutation.isPending}
-                className="rounded-lg bg-gray-800 text-white px-3 py-1 font-medium hover:bg-gray-900 disabled:opacity-50 transition-colors"
-              >
-                {updateMatchMutation.isPending
-                  ? "Guardando..."
-                  : "Actualizar estado"}
-              </button>
             </div>
 
             {statusMessage && (
@@ -309,122 +444,148 @@ export function MatchEventsModal({
             </div>
           )}
 
-          {/* Formulario para registrar gol o evento */}
+          {/* Formulario para registrar gol o evento (solo con la cédula abierta) */}
           <div className="rounded-2xl border border-gray-200 p-4 bg-white">
             <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-1.5">
               <span>⚽</span> Registrar Gol / Evento
             </h3>
 
-            <form onSubmit={handleAddEvent} className="flex flex-col gap-3">
-              {/* Selector de equipo */}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTeamId(homeTeamId);
-                    setSelectedPlayerId("");
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    selectedTeamId === homeTeamId
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                  }`}
-                >
-                  Local: {homeName}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTeamId(awayTeamId);
-                    setSelectedPlayerId("");
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    selectedTeamId === awayTeamId
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                  }`}
-                >
-                  Visitante: {awayName}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Tipo de evento */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-medium text-gray-500">
-                    Tipo de evento
-                  </label>
-                  <select
-                    value={eventType}
-                    onChange={(e) =>
-                      setEventType(e.target.value as MatchEventType)
-                    }
-                    className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
+            <fieldset disabled={!isLive} className="disabled:opacity-50">
+              <form onSubmit={handleAddEvent} className="flex flex-col gap-3">
+                {/* Selector de equipo */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTeamId(homeTeamId);
+                      setSelectedPlayerId("");
+                      resetClientEventId();
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                      selectedTeamId === homeTeamId
+                        ? "bg-primary text-white border-primary shadow-xs"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
                   >
-                    <option value="gol">⚽ Gol</option>
-                    <option value="tarjeta_amarilla">
-                      🟨 Tarjeta amarilla
-                    </option>
-                    <option value="tarjeta_roja">🟥 Tarjeta roja</option>
-                    <option value="asistencia">🎯 Asistencia</option>
-                    <option value="cambio">🔄 Cambio</option>
-                    <option value="otro">📝 Otro</option>
-                  </select>
+                    Local: {homeName}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTeamId(awayTeamId);
+                      setSelectedPlayerId("");
+                      resetClientEventId();
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                      selectedTeamId === awayTeamId
+                        ? "bg-primary text-white border-primary shadow-xs"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    Visitante: {awayName}
+                  </button>
                 </div>
 
-                {/* Jugador */}
-                <div className="flex flex-col gap-1 sm:col-span-1">
-                  <label className="text-[11px] font-medium text-gray-500">
-                    Jugador (
-                    {selectedTeamId === homeTeamId ? "Local" : "Visitante"})
-                  </label>
-                  <select
-                    value={selectedPlayerId}
-                    onChange={(e) => setSelectedPlayerId(e.target.value)}
-                    className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
-                  >
-                    <option value="">
-                      {isLoadingPlayers
-                        ? "Cargando jugadores..."
-                        : teamPlayers.length === 0
-                          ? "(No hay jugadores en este equipo)"
-                          : "(Sin asignar / Desconocido)"}
-                    </option>
-                    {teamPlayers.map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.number != null ? `#${player.number} ` : ""}
-                        {player.firstName} {player.lastName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Minuto */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-medium text-gray-500">
-                    Minuto (opcional)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max="150"
-                      value={minute}
-                      onChange={(e) => setMinute(e.target.value)}
-                      placeholder="Ej. 34"
-                      className="w-full min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
-                    />
-                    <button
-                      type="submit"
-                      disabled={createEventMutation.isPending}
-                      className="shrink-0 min-h-9 px-3.5 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Tipo de evento */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-medium text-gray-500">
+                      Tipo de evento
+                    </label>
+                    <select
+                      value={eventType}
+                      onChange={(e) => {
+                        setEventType(e.target.value as MatchEventType);
+                        resetClientEventId();
+                      }}
+                      className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
                     >
-                      {createEventMutation.isPending ? "..." : "+ Agregar"}
-                    </button>
+                      <option value="gol">⚽ Gol</option>
+                      <option value="gol_penal">🥅 Gol de penal</option>
+                      <option value="autogol">🙈 Autogol</option>
+                      <option value="tarjeta_amarilla">
+                        🟨 Tarjeta amarilla
+                      </option>
+                      <option value="tarjeta_roja">🟥 Tarjeta roja</option>
+                      <option value="asistencia">🎯 Asistencia</option>
+                      <option value="cambio">🔄 Cambio</option>
+                      <option value="otro">📝 Otro</option>
+                    </select>
+                  </div>
+
+                  {/* Jugador */}
+                  <div className="flex flex-col gap-1 sm:col-span-1">
+                    <label className="text-[11px] font-medium text-gray-500">
+                      Jugador (
+                      {selectedTeamId === homeTeamId ? "Local" : "Visitante"})
+                    </label>
+                    <select
+                      value={selectedPlayerId}
+                      onChange={(e) => {
+                        setSelectedPlayerId(e.target.value);
+                        resetClientEventId();
+                      }}
+                      className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
+                    >
+                      <option value="">
+                        {isLoadingPlayers
+                          ? "Cargando jugadores..."
+                          : teamPlayers.length === 0
+                            ? "(No hay jugadores en este equipo)"
+                            : "(Sin asignar / Desconocido)"}
+                      </option>
+                      {teamPlayers.map((player) => (
+                        <option key={player.id} value={player.id}>
+                          {player.number != null ? `#${player.number} ` : ""}
+                          {player.firstName} {player.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Minuto */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-medium text-gray-500">
+                      Minuto (opcional)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="150"
+                        value={minute}
+                        onChange={(e) => {
+                          setMinute(e.target.value);
+                          resetClientEventId();
+                        }}
+                        placeholder="Ej. 34"
+                        className="w-full min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
+                      />
+                      <button
+                        type="submit"
+                        disabled={createEventMutation.isPending}
+                        className="shrink-0 min-h-9 px-3.5 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      >
+                        {createEventMutation.isPending ? "..." : "+ Agregar"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </form>
+
+                {eventType === "autogol" && (
+                  <p className="text-[11px] text-orange-600">
+                    El autogol suma al rival: elige el equipo del jugador que lo
+                    cometió.
+                  </p>
+                )}
+              </form>
+            </fieldset>
+
+            {!isLive && (
+              <p className="mt-3 text-[11px] text-gray-400">
+                Los eventos solo se registran con el partido en curso.
+              </p>
+            )}
           </div>
 
           {/* Línea de tiempo / Eventos registrados */}
@@ -479,9 +640,13 @@ export function MatchEventsModal({
                       <button
                         type="button"
                         onClick={() => handleDeleteEvent(evt.id)}
-                        disabled={deleteEventMutation.isPending}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar evento"
+                        disabled={deleteEventMutation.isPending || !isLive}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-colors"
+                        title={
+                          isLive
+                            ? "Eliminar evento"
+                            : "Reabre la cédula para eliminar eventos"
+                        }
                       >
                         🗑️
                       </button>

@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useScheduleBracketNode } from "../hooks/use-schedule-bracket-node";
 import { useSaveBracketResult } from "../hooks/use-save-bracket-result";
 import { useSetBracketNodePenalties } from "../hooks/use-set-bracket-node-penalties";
+import {
+  useStartMatch,
+  useFinishMatch,
+  useReopenMatch,
+} from "../../matches/hooks/use-match-lifecycle";
 import { getBracketErrorMessage } from "../utils/bracket-error-message";
 import { datetimeLocalToIso } from "../../matches/utils/datetime";
 import { MATCH_STATUS_LABELS } from "../../matches/types";
@@ -210,7 +215,12 @@ function ResultForm({
   allowPenalties: boolean;
   onOpenEvents?: (match: Match) => void;
 }) {
+  const startMatch = useStartMatch(tournamentId);
+  const finishMatch = useFinishMatch(tournamentId);
+  const reopenMatch = useReopenMatch(tournamentId);
+  // PATCH del partido: aquí solo se usa para guardar los penales.
   const save = useSaveBracketResult(tournamentId);
+
   const homeScore = match.homeScore ?? 0;
   const awayScore = match.awayScore ?? 0;
   const isTie = homeScore === awayScore;
@@ -223,23 +233,55 @@ function ResultForm({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const needsPenalties = allowPenalties && isTie;
+  const canStart = match.status === "scheduled" || match.status === "postponed";
+  const isLive = match.status === "in_progress";
+  const hasResult = match.status === "finished";
+  const isBusy =
+    startMatch.isPending ||
+    finishMatch.isPending ||
+    reopenMatch.isPending ||
+    save.isPending;
+
+  const needsPenalties = allowPenalties && isTie && (isLive || hasResult);
   const penaltiesOk =
     !needsPenalties ||
     (homePen !== "" && awayPen !== "" && homePen !== awayPen);
-  const canSave = penaltiesOk;
-  const hasResult = match.status === "finished";
 
-  function handleSave() {
+  function handleStart() {
+    setError(null);
+    startMatch.mutate(match.id, {
+      onError: (err) => setError(getBracketErrorMessage(err)),
+    });
+  }
+
+  async function handleFinish() {
+    setError(null);
+    try {
+      await finishMatch.mutateAsync(match.id);
+      // Los penales ya no viajan con el estado: se guardan justo después de finalizar.
+      if (needsPenalties) {
+        await save.mutateAsync({
+          matchId: match.id,
+          payload: {
+            homePenalties: Number(homePen),
+            awayPenalties: Number(awayPen),
+          },
+        });
+      }
+      onDone();
+    } catch (err) {
+      setError(getBracketErrorMessage(err));
+    }
+  }
+
+  function handleSavePenalties() {
     setError(null);
     save.mutate(
       {
         matchId: match.id,
         payload: {
-          status: "finished",
-          ...(needsPenalties
-            ? { homePenalties: Number(homePen), awayPenalties: Number(awayPen) }
-            : {}),
+          homePenalties: Number(homePen),
+          awayPenalties: Number(awayPen),
         },
       },
       {
@@ -249,24 +291,17 @@ function ResultForm({
     );
   }
 
-  function handleClear() {
-    if (!window.confirm("¿Quitar el resultado de este partido?")) return;
+  function handleReopen() {
+    if (
+      !window.confirm(
+        "¿Reabrir este partido? Su resultado dejará de contar en la llave hasta que lo finalices otra vez.",
+      )
+    )
+      return;
     setError(null);
-    save.mutate(
-      {
-        matchId: match.id,
-        payload: {
-          status: "scheduled",
-          ...(allowPenalties
-            ? { homePenalties: null, awayPenalties: null }
-            : {}),
-        },
-      },
-      {
-        onSuccess: onDone,
-        onError: (err) => setError(getBracketErrorMessage(err)),
-      },
-    );
+    reopenMatch.mutate(match.id, {
+      onError: (err) => setError(getBracketErrorMessage(err)),
+    });
   }
 
   const inputClass =
@@ -284,6 +319,14 @@ function ResultForm({
             : "0 - 0"}
         </span>
       </div>
+
+      <p className="text-[11px] text-gray-500">
+        {canStart &&
+          "Inicia el partido para abrir la cédula y registrar goles."}
+        {isLive && "Cédula abierta: registra los goles y luego finaliza."}
+        {hasResult && "Partido finalizado. Reábrelo si necesitas corregir."}
+        {match.status === "cancelled" && "Partido cancelado."}
+      </p>
 
       {onOpenEvents && (
         <button
@@ -324,22 +367,46 @@ function ResultForm({
       {error && <p className="text-xs text-red-600">{error}</p>}
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!canSave || save.isPending}
-          className="min-h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
-          {save.isPending ? "Guardando..." : "Finalizar partido"}
-        </button>
+        {canStart && (
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={isBusy}
+            className="min-h-8 rounded-lg bg-emerald-600 px-3 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {startMatch.isPending ? "Iniciando..." : "Iniciar partido"}
+          </button>
+        )}
+        {isLive && (
+          <button
+            type="button"
+            onClick={handleFinish}
+            disabled={!penaltiesOk || isBusy}
+            className="min-h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {finishMatch.isPending || save.isPending
+              ? "Guardando..."
+              : "Finalizar partido"}
+          </button>
+        )}
+        {hasResult && needsPenalties && (
+          <button
+            type="button"
+            onClick={handleSavePenalties}
+            disabled={!penaltiesOk || isBusy}
+            className="min-h-8 rounded-lg bg-primary px-3 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {save.isPending ? "Guardando..." : "Guardar penales"}
+          </button>
+        )}
         {hasResult && (
           <button
             type="button"
-            onClick={handleClear}
-            disabled={save.isPending}
+            onClick={handleReopen}
+            disabled={isBusy}
             className="min-h-8 rounded-lg border border-red-200 bg-white px-3 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
           >
-            Reabrir partido
+            {reopenMatch.isPending ? "Reabriendo..." : "Reabrir partido"}
           </button>
         )}
         <button type="button" onClick={onDone} className={BUTTON}>

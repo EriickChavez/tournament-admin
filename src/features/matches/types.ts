@@ -51,6 +51,8 @@ export interface CreateMatchPayload {
     round?: number | null;
 }
 
+// El marcador no se envía: el backend lo deriva de los eventos de gol.
+// in_progress/finished solo se alcanzan con start/finish/reopen.
 export type UpdateMatchPayload = Partial<{
     categoryId: string;
     homeTeamId: string;
@@ -58,10 +60,7 @@ export type UpdateMatchPayload = Partial<{
     scheduledAt: string;
     venue: string | null;
     status: MatchStatus;
-    // El backend exige mandar los dos juntos (o ambos null para borrar el marcador).
-    homeScore: number | null;
-    awayScore: number | null;
-    // Solo con marcador empatado; también juntos (o ambos null).
+    // Solo con marcador empatado; van juntos (o ambos null para borrarlos).
     homePenalties: number | null;
     awayPenalties: number | null;
 }>;

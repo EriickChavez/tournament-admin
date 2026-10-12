@@ -47,6 +47,18 @@ export const matchesApi = {
     update: (id: string, payload: UpdateMatchPayload) =>
         httpClient.patch<{ match: Match }>(`/matches/${id}`, payload),
 
+    /** Abre la cédula: scheduled | postponed → in_progress. */
+    start: (id: string) =>
+        httpClient.post<{ match: Match }>(`/matches/${id}/start`, {}),
+
+    /** Cierra la cédula: in_progress → finished (fija el marcador desde los eventos). */
+    finish: (id: string) =>
+        httpClient.post<{ match: Match }>(`/matches/${id}/finish`, {}),
+
+    /** Reabre la cédula: finished → in_progress. */
+    reopen: (id: string) =>
+        httpClient.post<{ match: Match }>(`/matches/${id}/reopen`, {}),
+
     delete: (id: string) =>
         httpClient.delete<{ message: string }>(`/matches/${id}`),
 };

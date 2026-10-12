@@ -7,6 +7,7 @@ import {
   type MatchFormOutput,
 } from "../schemas/match-schema";
 import { isoToDatetimeLocal } from "../utils/datetime";
+import { MATCH_STATUS_LABELS } from "../types";
 import type { Match } from "../types";
 import type { Category } from "../../categories/types";
 import type { Team } from "../../teams/types";
@@ -27,12 +28,11 @@ const CloseIcon = () => (
   </svg>
 );
 
-const STATUS_OPTIONS: { value: Match["status"]; label: string }[] = [
-  { value: "scheduled", label: "Programado" },
-  { value: "in_progress", label: "En curso" },
-  { value: "finished", label: "Finalizado" },
-  { value: "cancelled", label: "Cancelado" },
-  { value: "postponed", label: "Pospuesto" },
+// Iniciar y finalizar se hacen desde la cédula (/start, /finish, /reopen), no desde este formulario.
+const EDITABLE_STATUSES: Match["status"][] = [
+  "scheduled",
+  "cancelled",
+  "postponed",
 ];
 
 interface MatchFormModalProps {
@@ -86,6 +86,17 @@ export function MatchFormModal({
     () => teams.filter((t) => t.categoryId === selectedCategoryId),
     [teams, selectedCategoryId],
   );
+
+  // Un partido finalizado no cambia de estado desde aquí (hay que reabrirlo en la cédula);
+  // uno en curso puede volver a programado, cancelarse o posponerse.
+  const statusOptions = useMemo(() => {
+    const current = match?.status;
+    if (current === "finished") return ["finished" as const];
+    if (current === "in_progress") {
+      return ["in_progress" as const, ...EDITABLE_STATUSES];
+    }
+    return EDITABLE_STATUSES;
+  }, [match?.status]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -260,12 +271,16 @@ export function MatchFormModal({
                 Estado
               </label>
               <select {...register("status")} className={inputClass}>
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {statusOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {MATCH_STATUS_LABELS[value]}
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] text-gray-400">
+                Iniciar, finalizar y reabrir se hace desde la cédula del
+                partido.
+              </p>
             </div>
           </div>
 

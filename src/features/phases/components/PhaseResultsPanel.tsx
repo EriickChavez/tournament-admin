@@ -4,6 +4,7 @@ import { matchesApi } from "../../matches/api/matches-api";
 import { useMatches } from "../../matches/hooks/use-matches";
 import { useMatchGroupNames } from "../../matches/hooks/use-match-group-names";
 import { MATCH_STATUS_LABELS } from "../../matches/types";
+import { getMatchErrorMessage } from "../../matches/utils/match-error-message";
 import { MatchEventsModal } from "../../match-events/components/MatchEventsModal";
 import type { Match } from "../../matches/types";
 import type { Phase, PhaseGroup } from "../types";
@@ -59,11 +60,14 @@ export function PhaseResultsPanel({
     return sortedMatches.filter((m) => m.phaseGroupId === groupFilter);
   }, [sortedMatches, groupFilter]);
 
+  // Partidos en curso, más los programados que ya traen marcador de antes de la cédula
+  // (esos primero se inician y luego se finalizan).
   const pendingMatches = matches.filter(
     (m) =>
-      m.status !== "finished" &&
-      m.homeScore != null &&
-      m.awayScore != null,
+      m.status === "in_progress" ||
+      ((m.status === "scheduled" || m.status === "postponed") &&
+        m.homeScore != null &&
+        m.awayScore != null),
   );
 
   async function handleFinalizeAllWithScore() {
@@ -73,16 +77,20 @@ export function PhaseResultsPanel({
     let count = 0;
     try {
       for (const m of pendingMatches) {
-        await matchesApi.update(m.id, { status: "finished" });
+        if (m.status !== "in_progress") await matchesApi.start(m.id);
+        await matchesApi.finish(m.id);
         count++;
       }
-      setSummary(`Se marcaron como finalizados ${count} partidos.`);
+      setSummary(`Se finalizaron ${count} partidos.`);
+    } catch (err) {
+      setSummary(
+        `Se finalizaron ${count} partidos. ${getMatchErrorMessage(err)}`,
+      );
+    } finally {
+      // Aunque falle uno, los anteriores ya cambiaron: se refresca siempre.
       await queryClient.invalidateQueries({
         queryKey: ["tournaments", tournamentId, "matches"],
       });
-    } catch {
-      setSummary("Ocurrió un error al actualizar algunos partidos.");
-    } finally {
       setIsFinishing(false);
     }
   }
@@ -104,9 +112,7 @@ export function PhaseResultsPanel({
     );
   }
 
-  const finishedCount = matches.filter(
-    (m) => m.status === "finished",
-  ).length;
+  const finishedCount = matches.filter((m) => m.status === "finished").length;
 
   return (
     <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -116,8 +122,8 @@ export function PhaseResultsPanel({
             Resultados & Cédulas
           </h2>
           <p className="text-xs text-gray-500">
-            {finishedCount} de {matches.length} partidos finalizados. Haz clic en
-            el marcador para registrar goles, goleadores y minutos.
+            {finishedCount} de {matches.length} partidos finalizados. Haz clic
+            en el marcador para registrar goles, goleadores y minutos.
           </p>
           {(matchesQuery.data?.pagination.total ?? 0) > 100 && (
             <p className="text-xs text-amber-600">
@@ -134,7 +140,7 @@ export function PhaseResultsPanel({
           >
             {isFinishing
               ? "Finalizando..."
-              : `Finalizar partidos con marcador (${pendingMatches.length})`}
+              : `Finalizar partidos en curso (${pendingMatches.length})`}
           </button>
         )}
       </div>
