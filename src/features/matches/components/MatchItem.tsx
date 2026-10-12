@@ -1,5 +1,6 @@
 import type { Match } from "../types";
 import { MATCH_STATUS_LABELS } from "../types";
+import { MatchRefereesChip } from "./MatchRefereesChip";
 
 const EditIcon = () => (
   <svg
@@ -81,9 +82,12 @@ interface MatchItemProps {
   awayTeamName?: string;
   categoryTitle?: string;
   groupName?: string;
+  /** Nombres de los miembros del torneo por userId; si se pasa, se muestra el chip de árbitros. */
+  memberNameById?: Map<string, string>;
   onEdit: (match: Match) => void;
   onDelete: (match: Match) => void;
   onManageEvents?: (match: Match) => void;
+  onManageReferees?: (match: Match) => void;
   isDeleting: boolean;
 }
 
@@ -93,9 +97,11 @@ export function MatchItem({
   awayTeamName,
   categoryTitle,
   groupName,
+  memberNameById,
   onEdit,
   onDelete,
   onManageEvents,
+  onManageReferees,
   isDeleting,
 }: MatchItemProps) {
   const formattedDate = new Date(match.scheduledAt).toLocaleString("es-MX", {
@@ -134,6 +140,12 @@ export function MatchItem({
               {groupName}
             </span>
           )}
+          {memberNameById && (
+            <MatchRefereesChip
+              matchId={match.id}
+              memberNameById={memberNameById}
+            />
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
           <span className="flex items-center gap-1">
@@ -147,7 +159,7 @@ export function MatchItem({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+      <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
         {onManageEvents && (
           <button
             type="button"
@@ -156,6 +168,16 @@ export function MatchItem({
             title="Cédula y eventos de partido"
           >
             <span>⚽</span> Cédula / Goles
+          </button>
+        )}
+        {onManageReferees && (
+          <button
+            type="button"
+            onClick={() => onManageReferees(match)}
+            className="min-h-8 px-3 rounded-lg border border-teal-200 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors flex items-center gap-1.5"
+            title="Árbitros asignados al partido"
+          >
+            <span>👤</span> Árbitros
           </button>
         )}
         <button

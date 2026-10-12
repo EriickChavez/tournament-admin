@@ -59,6 +59,16 @@ export const matchesApi = {
     reopen: (id: string) =>
         httpClient.post<{ match: Match }>(`/matches/${id}/reopen`, {}),
 
+    /** Árbitros asignados al partido (ids de usuario). Cualquier miembro del torneo puede verlos. */
+    getReferees: (id: string) =>
+        httpClient.get<{ refereeUserIds: string[] }>(`/matches/${id}/referees`),
+
+    /** Reemplaza el conjunto completo de árbitros. Solo el dueño. [] deja el partido sin asignar. */
+    setReferees: (id: string, userIds: string[]) =>
+        httpClient.put<{ refereeUserIds: string[] }>(`/matches/${id}/referees`, {
+            userIds,
+        }),
+
     delete: (id: string) =>
         httpClient.delete<{ message: string }>(`/matches/${id}`),
 };

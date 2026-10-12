@@ -6,8 +6,11 @@ import { useDeleteMatch } from "../hooks/use-delete-match";
 import { useMatchGroupNames } from "../hooks/use-match-group-names";
 import { useCategories } from "../../categories/hooks/use-categories";
 import { useTeams } from "../../teams/hooks/use-teams";
+import { useMembers } from "../../members/hooks/use-members";
+import { useCurrentUser } from "../../auth/hooks/use-current-user";
 import { MatchItem } from "./MatchItem";
 import { MatchFormModal } from "./MatchFormModal";
+import { MatchRefereesModal } from "./MatchRefereesModal";
 import { MatchEventsModal } from "../../match-events/components/MatchEventsModal";
 import { Pagination } from "../../../shared/components/Pagination";
 import { getMatchErrorMessage } from "../utils/match-error-message";
@@ -94,6 +97,8 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
   } = useMatches(tournamentId, page, undefined, filters);
   const { data: categoriesData } = useCategories(tournamentId);
   const { data: teamsData } = useTeams(tournamentId, 1, 100);
+  const { data: membersData } = useMembers(tournamentId);
+  const { data: currentUser } = useCurrentUser();
 
   const createMatch = useCreateMatch(tournamentId);
   const updateMatch = useUpdateMatch(tournamentId);
@@ -110,11 +115,13 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [eventsMatch, setEventsMatch] = useState<Match | null>(null);
+  const [refereesMatch, setRefereesMatch] = useState<Match | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
   const matches = matchesData?.matches ?? [];
   const categories = categoriesData?.categories ?? [];
   const teams = teamsData?.teams ?? [];
+  const members = membersData?.members ?? [];
 
   const groupNameById = useMatchGroupNames(matches);
 
@@ -122,6 +129,13 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
     categories.map((c) => [c.id, c.title] as const),
   );
   const teamNameById = new Map(teams.map((t) => [t.id, t.name] as const));
+  const memberNameById = new Map(
+    members.map((m) => [m.userId, m.displayName] as const),
+  );
+  // Solo el dueño asigna árbitros (el backend responde 403 a los demás).
+  const canAssignReferees = members.some(
+    (m) => m.userId === currentUser?.user.id && m.roleName === "OWNER",
+  );
   const canCreate = categories.length > 0 && teams.length >= 2;
 
   function handleOpenCreate() {
@@ -344,9 +358,11 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
                   categoryTitleById.get(match.categoryId)
                 }
                 {...(groupName ? { groupName: toGroupLabel(groupName) } : {})}
+                memberNameById={memberNameById}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteMatch}
                 onManageEvents={(m) => setEventsMatch(m)}
+                onManageReferees={(m) => setRefereesMatch(m)}
                 isDeleting={deleteMatch.isPending}
               />
             );
@@ -378,6 +394,14 @@ export function MatchesSection({ tournamentId }: MatchesSectionProps) {
         onClose={() => setEventsMatch(null)}
         match={eventsMatch}
         tournamentId={tournamentId}
+      />
+
+      <MatchRefereesModal
+        isOpen={Boolean(refereesMatch)}
+        onClose={() => setRefereesMatch(null)}
+        match={refereesMatch}
+        tournamentId={tournamentId}
+        canEdit={canAssignReferees}
       />
     </div>
   );

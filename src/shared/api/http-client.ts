@@ -1,6 +1,10 @@
 import { env } from '../../app/env'
 import { ApiError, NetworkError, type ApiErrorShape } from '../types/api-error'
 
+// Versión de la API. Va aparte de VITE_API_URL porque las URLs de imágenes
+// (`${VITE_API_URL}${logoUrl}`) son archivos estáticos que no están bajo /v1.
+const API_PREFIX = '/v1'
+
 interface RequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
     body?: unknown
@@ -11,7 +15,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     let response: Response
 
     try {
-        response = await fetch(`${env.VITE_API_URL}${path}`, {
+        response = await fetch(`${env.VITE_API_URL}${API_PREFIX}${path}`, {
             method: options.method ?? 'GET',
             credentials: 'include',
             // Con FormData el navegador arma el Content-Type (con boundary) solo;

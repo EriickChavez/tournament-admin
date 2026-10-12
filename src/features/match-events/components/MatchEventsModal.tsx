@@ -127,6 +127,8 @@ function MatchEventsContent({
 
   const [selectedTeamId, setSelectedTeamId] = useState<string>(homeTeamId);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  // Solo para cambios: el jugador que entra (selectedPlayerId es el que sale).
+  const [substitutePlayerId, setSubstitutePlayerId] = useState<string>("");
   const [eventType, setEventType] = useState<MatchEventType>("gol");
   const [minute, setMinute] = useState<string>("");
   // El estado vive aquí porque `match` es una copia que no se refresca sola.
@@ -149,6 +151,7 @@ function MatchEventsContent({
   const isLive = status === "in_progress";
   const isFinished = status === "finished";
   const canStart = status === "scheduled" || status === "postponed";
+  const isSubstitution = eventType === "cambio";
   const isBusy =
     startMatch.isPending ||
     finishMatch.isPending ||
@@ -199,6 +202,12 @@ function MatchEventsContent({
   async function handleAddEvent(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
+
+    if (isSubstitution && (!selectedPlayerId || !substitutePlayerId)) {
+      setFormError("Selecciona el jugador que sale y el que entra");
+      return;
+    }
+
     if (!clientEventIdRef.current) {
       clientEventIdRef.current = crypto.randomUUID();
     }
@@ -208,12 +217,16 @@ function MatchEventsContent({
         eventType,
         teamId: selectedTeamId,
         playerId: selectedPlayerId || undefined,
+        substitutePlayerId: isSubstitution
+          ? substitutePlayerId || undefined
+          : undefined,
         minute: minVal != null && !isNaN(minVal) ? minVal : undefined,
         clientEventId: clientEventIdRef.current,
       });
       resetClientEventId();
       setMinute("");
       setSelectedPlayerId("");
+      setSubstitutePlayerId("");
     } catch (err) {
       setFormError(getMatchErrorMessage(err));
     }
@@ -459,6 +472,7 @@ function MatchEventsContent({
                     onClick={() => {
                       setSelectedTeamId(homeTeamId);
                       setSelectedPlayerId("");
+                      setSubstitutePlayerId("");
                       resetClientEventId();
                     }}
                     className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
@@ -474,6 +488,7 @@ function MatchEventsContent({
                     onClick={() => {
                       setSelectedTeamId(awayTeamId);
                       setSelectedPlayerId("");
+                      setSubstitutePlayerId("");
                       resetClientEventId();
                     }}
                     className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
@@ -496,6 +511,7 @@ function MatchEventsContent({
                       value={eventType}
                       onChange={(e) => {
                         setEventType(e.target.value as MatchEventType);
+                        setSubstitutePlayerId("");
                         resetClientEventId();
                       }}
                       className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
@@ -513,16 +529,19 @@ function MatchEventsContent({
                     </select>
                   </div>
 
-                  {/* Jugador */}
+                  {/* Jugador (en un cambio, el que sale) */}
                   <div className="flex flex-col gap-1 sm:col-span-1">
                     <label className="text-[11px] font-medium text-gray-500">
-                      Jugador (
+                      {isSubstitution ? "Sale" : "Jugador"} (
                       {selectedTeamId === homeTeamId ? "Local" : "Visitante"})
                     </label>
                     <select
                       value={selectedPlayerId}
                       onChange={(e) => {
                         setSelectedPlayerId(e.target.value);
+                        if (e.target.value === substitutePlayerId) {
+                          setSubstitutePlayerId("");
+                        }
                         resetClientEventId();
                       }}
                       className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
@@ -532,7 +551,9 @@ function MatchEventsContent({
                           ? "Cargando jugadores..."
                           : teamPlayers.length === 0
                             ? "(No hay jugadores en este equipo)"
-                            : "(Sin asignar / Desconocido)"}
+                            : isSubstitution
+                              ? "Selecciona quién sale"
+                              : "(Sin asignar / Desconocido)"}
                       </option>
                       {teamPlayers.map((player) => (
                         <option key={player.id} value={player.id}>
@@ -542,6 +563,36 @@ function MatchEventsContent({
                       ))}
                     </select>
                   </div>
+
+                  {/* Jugador que entra (solo cambios) */}
+                  {isSubstitution && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-medium text-gray-500">
+                        Entra (
+                        {selectedTeamId === homeTeamId ? "Local" : "Visitante"})
+                      </label>
+                      <select
+                        value={substitutePlayerId}
+                        onChange={(e) => {
+                          setSubstitutePlayerId(e.target.value);
+                          resetClientEventId();
+                        }}
+                        className="min-h-9 px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-800 outline-none focus:bg-white focus:border-primary"
+                      >
+                        <option value="">Selecciona quién entra</option>
+                        {teamPlayers
+                          .filter((player) => player.id !== selectedPlayerId)
+                          .map((player) => (
+                            <option key={player.id} value={player.id}>
+                              {player.number != null
+                                ? `#${player.number} `
+                                : ""}
+                              {player.firstName} {player.lastName}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Minuto */}
                   <div className="flex flex-col gap-1">
@@ -578,6 +629,12 @@ function MatchEventsContent({
                     cometió.
                   </p>
                 )}
+                {eventType === "tarjeta_amarilla" && (
+                  <p className="text-[11px] text-amber-600">
+                    La segunda amarilla del mismo jugador genera la roja
+                    automáticamente.
+                  </p>
+                )}
               </form>
             </fieldset>
 
@@ -611,6 +668,10 @@ function MatchEventsContent({
                   const playerName = evt.playerId
                     ? playerMap.get(evt.playerId)
                     : null;
+                  const substituteName = evt.substitutePlayerId
+                    ? playerMap.get(evt.substitutePlayerId)
+                    : null;
+                  const isDerived = Boolean(evt.derivedFromEventId);
 
                   return (
                     <div
@@ -629,10 +690,20 @@ function MatchEventsContent({
                         </span>
                         <div>
                           <p className="text-xs font-semibold text-gray-800">
-                            {playerName ?? "(Jugador sin asignar)"}
+                            {evt.eventType === "cambio"
+                              ? `Sale: ${playerName ?? "—"}`
+                              : (playerName ?? "(Jugador sin asignar)")}
                           </p>
+                          {evt.eventType === "cambio" && (
+                            <p className="text-[11px] font-medium text-gray-600">
+                              Entra: {substituteName ?? "—"}
+                            </p>
+                          )}
                           <p className="text-[10px] text-gray-400">
                             {isHome ? homeName : awayName}
+                            {isDerived && evt.description
+                              ? ` • ${evt.description}`
+                              : ""}
                           </p>
                         </div>
                       </div>
@@ -640,12 +711,16 @@ function MatchEventsContent({
                       <button
                         type="button"
                         onClick={() => handleDeleteEvent(evt.id)}
-                        disabled={deleteEventMutation.isPending || !isLive}
+                        disabled={
+                          deleteEventMutation.isPending || !isLive || isDerived
+                        }
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-colors"
                         title={
-                          isLive
-                            ? "Eliminar evento"
-                            : "Reabre la cédula para eliminar eventos"
+                          isDerived
+                            ? "Se elimina al borrar la segunda amarilla"
+                            : isLive
+                              ? "Eliminar evento"
+                              : "Reabre la cédula para eliminar eventos"
                         }
                       >
                         🗑️
